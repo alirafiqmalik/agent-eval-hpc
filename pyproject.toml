@@ -1,0 +1,36 @@
+[project]
+name = "agentic-sfv-framework"
+version = "0.1.0"
+description = "Harbor jobs for local runs and Unity HPC"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "harbor==0.24.0",
+    "packaging>=24,<27",
+    "pydantic>=2.11,<3",
+    "PyYAML>=6.0.2,<7",
+]
+
+[dependency-groups]
+dev = ["pytest>=8.3,<10", "ruff>=0.11,<1"]
+
+[project.scripts]
+agentic-eval = "agentic_eval.cli:main"
+
+[build-system]
+requires = ["hatchling>=1.27,<2"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agentic_eval", "src/runners"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+extend-exclude = ["experiments/*/tasks"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
