@@ -1,0 +1,15 @@
+# Hardware measured by the Unity controller for the A100 80GB profile:
+# NVIDIA A100-SXM4-80GB, 81920 MiB, constraint a100-80g. The 128 GiB
+# allocation covers the model server and four concurrent sandboxed trials.
+hardware:
+  id: unity-a100-80g-v1
+  gpu_count: 1
+  gpu_name: NVIDIA A100-SXM4-80GB
+  gpu_memory_mb: 81920
+  allocated_cpus: 8
+  allocated_memory_mb: 131072
+walltime_seconds: 14400
+model_server:
+  port: 8000
+  context_length: 32768
+  command: env VLLM_USE_FLASHINFER_SAMPLER=0 vllm serve {model} --revision c202236235762e1c871ad0ccb60c8ee5ba337b9a --served-model-name Qwen3.5-9B --port {port} --tensor-parallel-size 1 --max-model-len {context_length} --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder --language-model-only

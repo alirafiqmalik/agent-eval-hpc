@@ -1,0 +1,15 @@
+job_name: unityhpc-starter-experiment
+n_attempts: 1
+n_concurrent_trials: 4
+agent_setup_timeout_multiplier: 4.0
+environment_build_timeout_multiplier: 4.0
+retry:
+  max_retries: 1
+  include_exceptions: [AgentSetupTimeoutError, EnvironmentStartTimeoutError]
+environment:
+  type: singularity
+agents:
+  - name: qwen-coder
+    model_name: Qwen/Qwen3.5-9B
+datasets:
+  - path: experiments/unityhpc-starter-experiment/tasks/humaneval

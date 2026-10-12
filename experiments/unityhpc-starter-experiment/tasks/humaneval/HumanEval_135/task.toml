@@ -1,0 +1,13 @@
+version = "1.0"
+
+[verifier]
+timeout_sec = 120.0
+
+[agent]
+timeout_sec = 600.0
+
+[environment]
+docker_image = "experiments/unityhpc-starter-experiment/sandbox/sandbox.sif"
+cpus = 2
+memory_mb = 4096
+build_timeout_sec = 600.0
