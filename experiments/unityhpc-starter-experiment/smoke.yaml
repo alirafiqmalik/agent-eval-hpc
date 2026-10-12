@@ -1,0 +1,11 @@
+job_name: unityhpc-starter-smoke
+n_attempts: 1
+n_concurrent_trials: 1
+environment:
+  type: singularity
+agents:
+  - name: qwen-coder
+    model_name: Qwen/Qwen3.5-9B
+datasets:
+  - path: experiments/unityhpc-starter-experiment/tasks/humaneval
+    task_names: [HumanEval_0, HumanEval_1]

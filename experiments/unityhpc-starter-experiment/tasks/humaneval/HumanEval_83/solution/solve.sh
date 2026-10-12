@@ -1,0 +1,2 @@
+#!/bin/bash
+python -c 'import base64, pathlib; pathlib.Path("/app/solution.py").write_bytes(base64.b64decode("CmRlZiBzdGFydHNfb25lX2VuZHMobik6CiAgICAiIiIKICAgIEdpdmVuIGEgcG9zaXRpdmUgaW50ZWdlciBuLCByZXR1cm4gdGhlIGNvdW50IG9mIHRoZSBudW1iZXJzIG9mIG4tZGlnaXQKICAgIHBvc2l0aXZlIGludGVnZXJzIHRoYXQgc3RhcnQgb3IgZW5kIHdpdGggMS4KICAgICIiIgogICAgaWYgbiA9PSAxOiByZXR1cm4gMQogICAgcmV0dXJuIDE4ICogKDEwICoqIChuIC0gMikpCg=="))'

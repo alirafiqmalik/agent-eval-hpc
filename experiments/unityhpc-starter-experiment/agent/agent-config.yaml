@@ -1,0 +1,3 @@
+model: Qwen/Qwen3.5-9B
+version: 0.25.1
+max_output_tokens: 2048

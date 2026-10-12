@@ -1,0 +1,28 @@
+Bootstrap: docker
+From: python:3.12-bookworm
+
+%post
+    ln -sf /usr/local/bin/python3 /usr/bin/python3
+    mkdir -p /app /tests /logs /staging
+    mv /usr/bin/su /usr/bin/su.original
+    cat > /usr/bin/su <<'SH'
+#!/bin/sh
+if [ "$(id -u)" -eq 0 ] && [ "$1" = root ]; then
+    shift
+    if [ "$1" = -s ]; then
+        shell="$2"
+        shift 2
+    else
+        shell=/bin/sh
+    fi
+    if [ "$1" = -c ]; then
+        shift
+        exec "$shell" -c "$1"
+    fi
+fi
+exec /usr/bin/su.original "$@"
+SH
+    chmod 755 /usr/bin/su
+
+%labels
+    Name unityhpc-starter-experiment
