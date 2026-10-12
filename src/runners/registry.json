@@ -1,0 +1,3 @@
+{
+  "unityhpc": "runners.unityhpc.adapter:UnityRunner"
+}

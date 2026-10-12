@@ -1,0 +1,14 @@
+controller_url: http://127.0.0.1:8301
+runtime_root: /work/pi_taqi_umass_edu/ali/agentic-sfv-runtime-v1
+gpu_type: a100
+constraint: a100-80g&sapphirerapids
+partitions: [gpu, gpu-preempt]
+cpu_partitions: [cpu, cpu-preempt]
+qos: short
+max_concurrent: 1
+timeout_seconds: 120
+max_attempts: 1
+allocation_limits:
+  gpu_hours: null
+  cpu_hours: null
+download_limit_gib: null

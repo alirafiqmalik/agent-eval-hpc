@@ -1,0 +1,21 @@
+name: checks
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  unit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Install pinned uv
+        run: |
+          python3 -m venv /tmp/evaluation-ci
+          printf 'uv==0.11.2 --hash=sha256:be4bb136bbc8840ede58663e8ba5a9bbf3b5376f7f933f915df28d4078bb9095\n' > /tmp/uv-requirements.txt
+          /tmp/evaluation-ci/bin/pip install --require-hashes -r /tmp/uv-requirements.txt
+          echo /tmp/evaluation-ci/bin >> "$GITHUB_PATH"
+      - run: uv sync --locked
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run pytest
+      - run: uv run agentic-eval validate experiments/unityhpc-starter-experiment/job.yaml
