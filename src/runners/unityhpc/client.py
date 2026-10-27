@@ -7,8 +7,10 @@ import json
 import os
 import shutil
 import tempfile
+import time
+from http.client import RemoteDisconnected
 from pathlib import Path, PurePosixPath
-from urllib.error import HTTPError
+from urllib.error import HTTPError, URLError
 from urllib.parse import urljoin, urlsplit
 from urllib.request import Request, urlopen
 
@@ -39,11 +41,22 @@ class Client:
             method=method,
             headers={"Content-Type": "application/json"},
         )
-        try:
-            with urlopen(request, timeout=self.timeout) as response:
-                return json.load(response)
-        except HTTPError as exc:
-            raise ControllerError(exc.code, exc.read(2000).decode(errors="replace")) from exc
+        # Planning is read-only despite using POST. Mutations are retried by the
+        # caller only when their identity makes that safe.
+        attempts = 8 if method == "GET" or route == "/api/v1/campaigns/plan" else 1
+        for attempt in range(attempts):
+            try:
+                with urlopen(request, timeout=self.timeout) as response:
+                    return json.load(response)
+            except HTTPError as exc:
+                if (exc.code != 429 and exc.code < 500) or attempt == attempts - 1:
+                    raise ControllerError(
+                        exc.code, exc.read(2000).decode(errors="replace")
+                    ) from exc
+            except (URLError, TimeoutError, RemoteDisconnected, ConnectionResetError):
+                if attempt == attempts - 1:
+                    raise
+            time.sleep(min(30, 5 * (attempt + 1)))
 
     def download(self, receipt: dict, destination: Path) -> dict:
         relative = PurePosixPath(receipt["path"])

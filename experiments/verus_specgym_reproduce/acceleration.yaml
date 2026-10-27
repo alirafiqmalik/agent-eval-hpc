@@ -1,0 +1,65 @@
+naming:
+  w: Independent GPU shards per profile; each retains its original agent concurrency
+    and budgets
+profiles:
+  q9-a100-bf16-c32k-p4-w8:
+    model: qwen3.5-9b
+    runner: runner-early.yaml
+    connection: specgym-a100-parallel.yaml
+    parallel_shards: 8
+    download_run_id: specgym-small-download-20261013-download
+    reuse_completed: specgym-early-20261013-qwen9b
+    fast_connection: short.yaml
+  q9-l40s-bf16-c32k-p4-w4:
+    model: qwen3.5-9b
+    runner: runner-single-l40s.yaml
+    connection: specgym-l40s.yaml
+    parallel_shards: 4
+    download_run_id: specgym-small-download-20261013-download
+    reuse_completed: sg1-20261014-q9-l40s-bf16-c32k-p4-1g
+  q9-bwm48-bf16-c32k-p4-w2:
+    model: qwen3.5-9b
+    runner: runner-single-bwm48.yaml
+    connection: specgym-bwm48.yaml
+    parallel_shards: 2
+    download_run_id: specgym-small-download-20261013-download
+    reuse_completed: sg1-20261014-q9-bwm48-bf16-c32k-p4-1g
+  q9-gh200-bf16-c32k-p4-w2:
+    model: qwen3.5-9b
+    runner: runner-single-gh200-q9.yaml
+    connection: specgym-gh200.yaml
+    parallel_shards: 2
+    download_run_id: specgym-small-download-20261013-download
+  q27-gh200-bf16-c32k-p4-w2:
+    model: qwen3.5-27b
+    runner: runner-single-gh200-q27.yaml
+    connection: specgym-gh200.yaml
+    parallel_shards: 2
+    download_run_id: specgym-small-download-20261013-download
+  q27-h100-bf16-c32k-p4-w2:
+    model: qwen3.5-27b
+    runner: runner-early-h100.yaml
+    connection: specgym-h100-preempt.yaml
+    parallel_shards: 2
+    download_run_id: specgym-small-download-20261013-download
+  kk26-h200-8g-c128k-p12-w1:
+    suite: paper
+    model: kimi-k2.6
+    runner: runner.yaml
+    connection: verus-specgym.yaml
+    parallel_shards: 1
+    download_run_id: specgym-model-download-20261013-001
+  glm51-h200-8g-c128k-p12-w1:
+    suite: paper
+    model: glm-5.1
+    runner: runner.yaml
+    connection: verus-specgym.yaml
+    parallel_shards: 1
+    download_run_id: specgym-model-download-20261013-001
+  dsv4p-h200-8g-c128k-p12-w1:
+    suite: paper
+    model: deepseek-v4pro
+    runner: runner.yaml
+    connection: verus-specgym.yaml
+    parallel_shards: 1
+    download_run_id: specgym-model-download-20261013-001

@@ -1,0 +1,44 @@
+naming:
+  q9: Qwen3.5-9B
+  q27: Qwen3.5-27B
+  bf16: Original BF16 weights
+  fp16: FP16 serving conversion
+  c32k: 32768 context / 24576 input / 8192 output tokens
+  c8k: 8192 context / 6144 input / 2048 output tokens
+  p4: 4 concurrent Harbor trials
+  p1: 1 concurrent Harbor trial
+  1g: One allocated GPU or MIG slice
+  bwm48: Blackwell RTX PRO 6000 MIG 2g.48gb
+  r8k: Quadro RTX 8000
+  arm: ARM server plus separate x86 agent/verifier
+  eager: CUDA graphs disabled
+  triton: Triton attention, CUDA graphs disabled
+profiles:
+  q9-a40-bf16-c32k-p4-1g:
+    model: qwen3.5-9b
+    runner: runner-single-a40.yaml
+    connection: specgym-a40.yaml
+  q9-bwm48-bf16-c32k-p4-1g:
+    model: qwen3.5-9b
+    runner: runner-single-bwm48.yaml
+    connection: specgym-bwm48.yaml
+  q27-gh200-bf16-c32k-p4-1g-arm:
+    model: qwen3.5-27b
+    runner: runner-single-gh200-q27.yaml
+    connection: specgym-gh200.yaml
+  q9-gh200-bf16-c32k-p4-1g-arm:
+    model: qwen3.5-9b
+    runner: runner-single-gh200-q9.yaml
+    connection: specgym-gh200.yaml
+  q9-l4-bf16-eager-c8k-p1-1g:
+    model: qwen3.5-9b
+    runner: runner-single-l4.yaml
+    connection: specgym-l4.yaml
+  q9-l40s-bf16-c32k-p4-1g:
+    model: qwen3.5-9b
+    runner: runner-single-l40s.yaml
+    connection: specgym-l40s.yaml
+  q9-r8k-fp16-triton-c32k-p4-1g:
+    model: qwen3.5-9b
+    runner: runner-single-r8k.yaml
+    connection: specgym-r8k.yaml

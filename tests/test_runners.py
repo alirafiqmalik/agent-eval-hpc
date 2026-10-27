@@ -20,6 +20,90 @@ UNLIMITED = {"gpu_hours": None, "cpu_hours": None}
 
 
 @pytest.mark.parametrize(
+    "method,route,retries",
+    [
+        ("GET", "/status", True),
+        ("POST", "/api/v1/campaigns/plan", True),
+        ("POST", "/api/v1/campaigns", False),
+    ],
+)
+def test_read_only_controller_calls_retry_disconnects(monkeypatch, method, route, retries):
+    import io
+    from http.client import RemoteDisconnected
+
+    calls = []
+
+    def urlopen(*args, **kwargs):
+        calls.append(1)
+        if len(calls) == 1:
+            raise RemoteDisconnected("connection reset during controller restart")
+        return io.BytesIO(b'{"ok":true}')
+
+    monkeypatch.setattr("runners.unityhpc.client.urlopen", urlopen)
+    monkeypatch.setattr("runners.unityhpc.client.time.sleep", lambda _: None)
+    client = Client("http://localhost:8301", 1, max_download_bytes=None)
+    if retries:
+        assert client.json(method, route) == {"ok": True}
+        assert len(calls) == 2
+    else:
+        with pytest.raises(RemoteDisconnected):
+            client.json(method, route)
+        assert len(calls) == 1
+
+
+def test_arm_server_pairs_with_cpu_verifier_without_duplicate_gpu_request(tmp_path):
+    import yaml
+
+    root = Path(__file__).resolve().parents[1]
+    runner = UnityRunner(
+        root / "src/runners/unityhpc/connections/specgym-gh200.yaml",
+        Budget(tmp_path / "budget.json", **UNLIMITED),
+    )
+    runtime = yaml.safe_load(
+        (root / "experiments/verus_specgym_reproduce/runner-single-gh200-q9.yaml").read_text()
+    )
+    req = ExecutionRequest(
+        "gh-test",
+        tmp_path,
+        ("bash", "task.sh"),
+        ("harbor-jobs.tar.gz",),
+        runtime["hardware"],
+        14400,
+        environment={"EVAL_RUNNER_CONFIG": json.dumps(runtime)},
+    )
+    declaration = runner.declaration(req)
+    evaluation, server = declaration["tasks"]
+    assert declaration["max_concurrent"] == 2
+    assert sum(t["resources"]["gpu_count"] for t in declaration["tasks"]) == 1
+    assert evaluation["resources"]["constraint"] == "x86_64"
+    assert evaluation["env"]["EVAL_MODEL_SERVER_MODE"] == "external"
+    assert server["resources"]["partitions"] == ["arm-gpu"]
+    assert server["resources"]["expected_gpu_name"] == "NVIDIA GH200 480GB"
+    assert server["argv"][0].startswith(runner.config["server_runtime_root"])
+    assert evaluation["env"]["EVAL_RUNTIME_ROOT"] == runner.config["runtime_root"]
+
+
+def test_h200_submission_preserves_type_and_attestation_with_constraint_request(tmp_path):
+    import yaml
+
+    root = Path(__file__).resolve().parents[1]
+    runner = UnityRunner(
+        root / "src/runners/unityhpc/connections/verus-specgym.yaml",
+        Budget(tmp_path / "budget.json", **UNLIMITED),
+    )
+    hardware = yaml.safe_load(
+        (root / "experiments/verus_specgym_reproduce/runner.yaml").read_text()
+    )["hardware"]
+    request = ExecutionRequest("h200-probe", tmp_path, ("true",), ("result.json",), hardware, 60)
+    resources = runner.declaration(request)["tasks"][0]["resources"]
+    assert resources["gpu_type"] == "h200_nvl"
+    assert resources["gpu_type"] in resources["constraint"].split("&")
+    assert resources["gpu_request_by_constraint"] is True
+    assert resources["expected_gpu_name"] == hardware["gpu_name"]
+    assert resources["expected_gpu_memory_mb"] == hardware["gpu_memory_mb"]
+
+
+@pytest.mark.parametrize(
     "changed", [None, "identity", "argv", "environment", "outputs", "hardware", "source", "hash"]
 )
 def test_unity_recovery_attests_exact_request_and_source(tmp_path, monkeypatch, changed):
@@ -355,3 +439,30 @@ def test_moved_connection_keeps_the_project_budget_ledger():
     root = Path(__file__).resolve().parents[1]
     runner = UnityRunner(root / "src/runners/unityhpc/connections/config.yaml")
     assert runner.budget.path == root / ".cache/budget.json"
+
+
+def test_model_metadata_staging_keeps_weights_and_optional_lookups_local(tmp_path):
+    from runners.unityhpc.jobs.model_metadata import stage_metadata
+
+    source = tmp_path / "shared"
+    source.mkdir()
+    (source / "config.json").write_text('{"model_type": "qwen3_5"}')
+    (source / "model.safetensors.index.json").write_text("{}")
+    (source / "weights.safetensors").write_bytes(b"unchanged pinned weights")
+    (source / ".cache").mkdir()
+    (source / ".cache/lock").write_text("download metadata")
+    destination = tmp_path / "local"
+    receipt = stage_metadata(source, destination)
+    assert (destination / "weights.safetensors").is_symlink()
+    assert (destination / "weights.safetensors").resolve() == source / "weights.safetensors"
+    assert (destination / "config.json").read_bytes() == (source / "config.json").read_bytes()
+    assert not (destination / "config.json").is_symlink()
+    assert not (destination / "model.safetensors.index.json").is_symlink()
+    assert not (destination / ".cache").exists()
+    assert not (destination / "processor_config.json").exists()
+    assert len(receipt["files"]) == 3
+    # Removing the temporary metadata must never remove the original checkpoint.
+    import shutil
+
+    shutil.rmtree(destination)
+    assert (source / "weights.safetensors").read_bytes() == b"unchanged pinned weights"

@@ -7,6 +7,7 @@ import json
 import sys
 import time
 from datetime import UTC, datetime
+from http.client import RemoteDisconnected
 from pathlib import Path
 from urllib.error import URLError
 
@@ -18,12 +19,17 @@ from runners.interface import ExecutionNotFoundError
 from runners.unityhpc.client import ControllerError
 
 TERMINAL = {"completed", "failed", "cancelled"}
+TRANSPORT_ERRORS = (ControllerError, URLError, TimeoutError, RemoteDisconnected, ConnectionError)
+
+
+class IncompleteEvaluationError(ValueError):
+    """A terminal allocation has incomplete results, eligible for a recorded retry."""
 
 
 def _transient(error: Exception) -> bool:
     if isinstance(error, ControllerError):
         return error.status == 429 or error.status >= 500
-    return isinstance(error, (URLError, TimeoutError))
+    return isinstance(error, (URLError, TimeoutError, RemoteDisconnected, ConnectionError))
 
 
 def wait_for_terminal(runner, run_id: str, poll_seconds: int) -> dict:
@@ -35,7 +41,7 @@ def wait_for_terminal(runner, run_id: str, poll_seconds: int) -> dict:
         try:
             campaign = runner.status(run_id)
             failures = 0
-        except (ControllerError, URLError, TimeoutError) as error:
+        except TRANSPORT_ERRORS as error:
             if not _transient(error):
                 raise
             failures += 1
@@ -64,7 +70,7 @@ def submit_with_retries(runner, request) -> None:
         try:
             runner.submit(request)
             return
-        except (ControllerError, URLError, TimeoutError) as error:
+        except TRANSPORT_ERRORS as error:
             if not _transient(error) or attempt == 5:
                 raise
             print(f"{request.id}: submission retry {attempt}/5: {error}", flush=True)
@@ -78,13 +84,13 @@ def collect(runner, job: Path, run_id: str, output: Path, campaign: dict) -> dic
         try:
             receipts = runner.fetch(run_id, output)
             break
-        except (ControllerError, URLError, TimeoutError) as error:
+        except TRANSPORT_ERRORS as error:
             if not _transient(error) or attempt == 5:
                 raise
             print(f"{run_id}: artifact fetch retry {attempt}/5: {error}", flush=True)
             time.sleep(30)
     if not any(receipt.get("path", "").endswith("harbor-jobs.tar.gz") for receipt in receipts):
-        raise ValueError("campaign has no Harbor results archive")
+        raise IncompleteEvaluationError("campaign has no Harbor results archive")
     unpack_run(output)
     post_run(job.resolve().parent, output)
 
@@ -125,7 +131,7 @@ def collect(runner, job: Path, run_id: str, output: Path, campaign: dict) -> dic
     manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
     print(json.dumps({"manifest": str(manifest_path), **manifest["summary"], "complete": complete}))
     if not complete:
-        raise ValueError(f"incomplete evaluation; inspect {manifest_path}")
+        raise IncompleteEvaluationError(f"incomplete evaluation; inspect {manifest_path}")
     return manifest
 
 

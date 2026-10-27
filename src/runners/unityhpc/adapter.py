@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 import math
@@ -30,6 +31,7 @@ class UnityRunner:
     # local caches, generated results, and the guide symlinks out of uploads.
     BUNDLE_EXCLUDES = [
         ".cache",
+        ".temp",
         ".cursor",
         ".ruff_cache",
         "artifacts",
@@ -58,7 +60,7 @@ class UnityRunner:
             raise ValueError("download limit must be nonnegative GiB or null")
         self.client = Client(
             self.config["controller_url"],
-            self.config["timeout_seconds"],
+            int(os.environ.get("UNITYHPC_CONTROLLER_TIMEOUT", self.config["timeout_seconds"])),
             max_download_bytes=None if download_limit is None else int(download_limit * 1024**3),
         )
         limits = self.config["allocation_limits"]
@@ -94,6 +96,8 @@ class UnityRunner:
                 expected_gpu_memory_mb=hw["gpu_memory_mb"],
                 gpu_memory_tolerance_mb=hw.get("gpu_memory_tolerance_mb", 0),
             )
+            if self.config.get("gpu_request_by_constraint"):
+                resources["gpu_request_by_constraint"] = True
         if self.config.get("nodelist"):
             resources["nodelist"] = self.config["nodelist"]
         if self.config.get("qos"):
@@ -117,6 +121,38 @@ class UnityRunner:
         }
         if any(k.startswith("HPC_") for k in task["env"]):
             raise ValueError("controller-owned environment cannot be overridden")
+        tasks = [task]
+        runtime = json.loads(request.environment.get("EVAL_RUNNER_CONFIG", "{}"))
+        if worker := runtime.get("model_server", {}).get("remote_worker"):
+            # One controller campaign owns both architectures and their artifacts.
+            # The ARM GPU task serves inference; the x86 task runs Harbor/Verus.
+            server_task = copy.deepcopy(task)
+            server_task.update(
+                task_id="model-server",
+                argv=[
+                    str(Path(self.config["server_runtime_root"]) / ".venv/bin/python"),
+                    "src/runners/unityhpc/jobs/remote_server.py",
+                    "serve",
+                ],
+                outputs=["server-runtime.json", "model-server.log"],
+            )
+            server_task["env"]["EVAL_RUNTIME_ROOT"] = self.config["server_runtime_root"]
+            task["model_class"] = worker["id"]
+            task["resources"] = {
+                "gpu_count": 0,
+                "cpus": worker["allocated_cpus"],
+                "memory_mb": worker["allocated_memory_mb"],
+                "walltime_seconds": request.walltime_seconds,
+                "partitions": self.config["cpu_partitions"],
+                "constraint": "x86_64",
+                **({"qos": self.config["qos"]} if self.config.get("qos") else {}),
+            }
+            task["env"].update(
+                EVAL_MODEL_SERVER_MODE="external",
+                EVAL_ALLOCATED_CPUS=str(worker["allocated_cpus"]),
+                EVAL_ALLOCATED_MEMORY_MB=str(worker["allocated_memory_mb"]),
+            )
+            tasks.append(server_task)
         return {
             "schema_version": 1,
             "campaign_id": request.id,
@@ -124,9 +160,9 @@ class UnityRunner:
                 "path": str(request.bundle.resolve()),
                 "exclude": self.BUNDLE_EXCLUDES,
             },
-            "max_concurrent": 1,
+            "max_concurrent": len(tasks),
             "max_attempts": request.max_attempts,
-            "tasks": [task],
+            "tasks": tasks,
         }
 
     def plan(self, request: ExecutionRequest) -> dict:

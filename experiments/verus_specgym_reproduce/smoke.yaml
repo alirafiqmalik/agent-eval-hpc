@@ -1,0 +1,23 @@
+job_name: verus-specgym-smoke
+n_attempts: 1
+n_concurrent_trials: 2
+timeout_multiplier: 2.0
+agent_setup_timeout_multiplier: 4.0
+environment_build_timeout_multiplier: 4.0
+retry:
+  max_retries: 0
+environment:
+  type: singularity
+agents:
+- name: swe-agent
+  override_timeout_sec: 900
+  model_name: hosted_vllm/specgym
+  env:
+    SWEAGENT_CONFIG: /opt/specgym-smoke-swe.yaml
+  kwargs:
+    max_input_tokens: '114688'
+datasets:
+- path: experiments/verus_specgym_reproduce/tasks/verus-specgym
+  task_names:
+  - verus-gym-1009-a
+  - verus-gym-1005-a

@@ -1,0 +1,27 @@
+configuration_label: q9-l4-bf16-eager-c8k-p1-1g
+hardware:
+  id: unity-l4-single-specgym-v1
+  gpu_count: 1
+  gpu_name: NVIDIA L4
+  gpu_memory_mb: 23034
+  gpu_memory_tolerance_mb: 0
+  allocated_cpus: 8
+  allocated_memory_mb: 98304
+walltime_seconds: 10800
+model_server:
+  port: 8000
+  context_length: 32768
+  extra_args:
+  - --dtype
+  - bfloat16
+  - --enforce-eager
+  - --gpu-memory-utilization
+  - '0.95'
+  - --max-num-batched-tokens
+  - '1024'
+evaluation:
+  tasks_per_shard: 1
+  context_length: 8192
+  max_input_tokens: 6144
+  max_output_tokens: 2048
+  concurrent_trials: 1

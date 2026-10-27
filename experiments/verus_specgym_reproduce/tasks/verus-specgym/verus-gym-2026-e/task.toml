@@ -1,0 +1,26 @@
+version = "1.0"
+
+[metadata]
+author_name = "Anmol Agarwal"
+author_email = "anmola@cs.cmu.edu"
+difficulty = "hard"
+category = "programming"
+tags = ["verus-gym", "codeforces", "contest-2026", "problem-e"]
+source_task_id = "2026__E"
+contest_id = "2026"
+problem_index = "E"
+codeforces_rating = 2500
+codeforces_tags = ["bitmasks", "dfs and similar", "flows", "graph matchings", "graphs"]
+
+[verifier]
+timeout_sec = 1200.0
+
+[agent]
+timeout_sec = 1800.0
+
+[environment]
+docker_image = "experiments/verus_specgym_reproduce/sandbox/sandbox.sif"
+build_timeout_sec = 1800.0
+cpus = 4
+memory_mb = 8192
+storage_mb = 32768

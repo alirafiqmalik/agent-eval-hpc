@@ -1,0 +1,21 @@
+configuration_label: q9-r8k-fp16-triton-c32k-p4-1g
+hardware:
+  id: unity-r8k-single-specgym-v1
+  gpu_count: 1
+  gpu_name: Quadro RTX 8000
+  gpu_memory_mb: 49152
+  gpu_memory_tolerance_mb: 2048
+  allocated_cpus: 8
+  allocated_memory_mb: 98304
+walltime_seconds: 10800
+model_server:
+  port: 8000
+  context_length: 32768
+  extra_args:
+  - --dtype
+  - float16
+  - --attention-backend
+  - TRITON_ATTN
+  - --enforce-eager
+evaluation:
+  tasks_per_shard: 4

@@ -1,0 +1,22 @@
+configuration_label: q9-gh200-bf16-c32k-p4-1g-arm
+hardware:
+  id: unity-gh200-96g-v1
+  gpu_count: 1
+  gpu_name: NVIDIA GH200 480GB
+  gpu_memory_mb: 97871
+  allocated_cpus: 8
+  allocated_memory_mb: 65536
+walltime_seconds: 28800
+smoke_walltime_seconds: 14400
+model_server:
+  port: 8000
+  context_length: 32768
+  extra_args:
+  - --dtype
+  - bfloat16
+  remote_worker:
+    id: unity-x86-specgym-worker-v1
+    allocated_cpus: 8
+    allocated_memory_mb: 98304
+evaluation:
+  tasks_per_shard: 12

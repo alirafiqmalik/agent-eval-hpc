@@ -1,0 +1,31 @@
+hardware:
+  id: unity-h200-nvl-8
+  gpu_count: 8
+  gpu_name: NVIDIA H200 NVL
+  gpu_memory_mb: 143771
+  gpu_memory_tolerance_mb: 1024
+  allocated_cpus: 64
+  allocated_memory_mb: 1048576
+walltime_seconds: 10800
+model_server:
+  local_model_metadata: true
+  # Sequential shard reads avoid NFS mmap/prefetch stalls during startup.
+  extra_args: [--safetensors-load-strategy, eager]
+  port: 8000
+  context_length: 131072
+  command: vllm serve {model} --served-model-name specgym --port {port} --tensor-parallel-size
+    8 --max-model-len {context_length} --max-num-seqs 12 --tool-call-parser glm47
+    --reasoning-parser glm45 --enable-auto-tool-choice --chat-template-content-format
+    string
+preparation:
+  hardware:
+    id: cpu-specgym-preparation
+    gpu_count: 0
+    allocated_cpus: 8
+    allocated_memory_mb: 32768
+  walltime_seconds: 43200
+smoke_walltime_seconds: 10800
+evaluation:
+  tasks_per_shard: 12
+  concurrent_trials: 12
+configuration_label: Paper local models; original agent budgets; completed-task checkpoints

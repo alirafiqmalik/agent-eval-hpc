@@ -12,6 +12,7 @@ dependencies = [
 
 [dependency-groups]
 dev = ["pytest>=8.3,<10", "ruff>=0.11,<1"]
+plots = ["matplotlib>=3.10,<4"]
 
 [project.scripts]
 agentic-eval = "agentic_eval.cli:main"

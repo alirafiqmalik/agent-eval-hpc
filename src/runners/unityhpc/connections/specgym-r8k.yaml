@@ -1,0 +1,23 @@
+controller_url: http://127.0.0.1:8301
+runtime_root: /work/pi_taqi_umass_edu/ali/agentic-sfv-runtime-v1
+gpu_type: rtx_8000
+constraint: rtx_8000
+gpu_request_by_constraint: true
+partitions:
+- gpu
+cpu_partitions:
+- cpu
+max_concurrent: 1
+timeout_seconds: 30
+max_attempts: 2
+allocation_limits:
+  gpu_hours: null
+  cpu_hours: null
+download_limit_gib: null
+model_cache: /scratch3/workspace/ahmalik_umass_edu-verus-specgym-reproduce/models
+workspace_lease:
+  name: verus-specgym-reproduce
+  ssh_host: unity
+  identity_file: ~/.ssh/unity_cluster_ed25519
+  duration_days: 30
+qos: normal

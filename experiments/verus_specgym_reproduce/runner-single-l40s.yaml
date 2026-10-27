@@ -1,0 +1,18 @@
+configuration_label: q9-l40s-bf16-c32k-p4-1g
+hardware:
+  id: unity-l40s-single-specgym-v1
+  gpu_count: 1
+  gpu_name: NVIDIA L40S
+  gpu_memory_mb: 46068
+  gpu_memory_tolerance_mb: 0
+  allocated_cpus: 8
+  allocated_memory_mb: 98304
+walltime_seconds: 10800
+model_server:
+  port: 8000
+  context_length: 32768
+  extra_args:
+  - --dtype
+  - bfloat16
+evaluation:
+  tasks_per_shard: 4
