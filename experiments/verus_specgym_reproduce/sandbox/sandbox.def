@@ -1,0 +1,67 @@
+Bootstrap: docker
+From: anmolagarwal999/python-verus-rust@sha256:d14aa23c64fd28167328e99c3a326a8a0c48e0a22dc4be24a46ffc7473c674e6
+
+%files
+    experiments/verus_specgym_reproduce/sandbox/upstream-common.tar.gz /opt/upstream-common.tar.gz
+    experiments/verus_specgym_reproduce/agent/swe.yaml /opt/specgym-swe.yaml
+    experiments/verus_specgym_reproduce/agent/smoke-swe.yaml /opt/specgym-smoke-swe.yaml
+    experiments/verus_specgym_reproduce/sandbox/sample_checker.py /opt/specgym-check.py
+    experiments/verus_specgym_reproduce/sandbox/agent-requirements.lock /opt/specgym-agent-requirements.lock
+    experiments/verus_specgym_reproduce/sandbox/agent_preflight.py /opt/specgym-agent-preflight.py
+    experiments/verus_specgym_reproduce/sandbox/install-agent.sh /opt/specgym-install-agent.sh
+
+%post
+    # Login shells may reset PATH. The image's /usr/bin/verus is a copied
+    # launcher which cannot locate verusroot; resolve to the original binary.
+    rm -f /usr/bin/verus
+    ln -s /verus-x86-linux/verus /usr/bin/verus
+    mkdir -p /opt/upstream /app /workspace /staging /tests /logs /home/dev /home/task_testing_specific_artifacts
+    tar --no-same-owner -xzf /opt/upstream-common.tar.gz -C /opt/upstream
+    cp -R /opt/upstream/common_artifacts /home/common_artifacts
+    cp -R /opt/upstream/evaluator_scripts /home/evaluator_scripts
+    cp -R /opt/upstream/runtime_bundle /opt/verus_gym_specgen_check_bundle
+    cp -R /home/common_artifacts/examples /home/examples
+    cp -R /home/common_artifacts/verus_documentation /home/verus_documentation
+    tar --no-same-owner -xzf /opt/verus_gym_specgen_check_bundle/verus_gym_specgen_check_runtime.tar.gz -C /opt
+    python3 -c 'import sys; assert sys.version_info[:2] == (3, 12)'
+    python3 -m venv /opt/verus_gym_specgen_check_venv
+    /opt/verus_gym_specgen_check_venv/bin/pip install -r /opt/verus_gym_specgen_check_runtime/runtime_requirements.txt
+    cat > /usr/local/bin/verus_gym_specgen_check <<'SH'
+#!/bin/bash
+set -euo pipefail
+export PATH="/opt/verus_gym_specgen_check_venv/bin:/home/verus-x86-linux:/root/.cargo/bin:/verus-x86-linux:${PATH}"
+export VERUS_BINARY=/verus-x86-linux/verus
+export RUSTUP_HOME=/root/.rustup
+export CARGO_HOME=/root/.cargo
+exec /opt/verus_gym_specgen_check_venv/bin/python /opt/specgym-check.py "$@"
+SH
+    chmod 755 /usr/local/bin/verus_gym_specgen_check
+    test -x /usr/bin/python3 || ln -s /usr/local/bin/python3 /usr/bin/python3
+    python3 -m venv /opt/harbor-server
+    /opt/harbor-server/bin/pip install fastapi uvicorn asciinema
+    ln -s /opt/harbor-server/bin/asciinema /usr/local/bin/asciinema
+    echo 'APT::Sandbox::User "root";' > /etc/apt/apt.conf.d/99sandbox
+    apt-get update -qq
+    apt-get install -y --no-install-recommends curl git tmux build-essential
+    bash /opt/specgym-install-agent.sh
+    # Root in Unity's user namespace has no usable PAM session.
+    mv /usr/bin/su /usr/bin/su.original
+    cat > /usr/bin/su <<'SH'
+#!/bin/sh
+if [ "$(id -u)" -eq 0 ] && [ "$1" = root ]; then
+    shift
+    if [ "$1" = -s ]; then shell="$2"; shift 2; else shell=/bin/sh; fi
+    if [ "$1" = -c ]; then shift; exec "$shell" -c "$1"; fi
+fi
+exec /usr/bin/su.original "$@"
+SH
+    chmod 755 /usr/bin/su
+
+%environment
+    export PATH=/home/verus-x86-linux:/root/.cargo/bin:/verus-x86-linux:/usr/local/bin:$PATH
+    export SWEAGENT_CONFIG=/opt/specgym-swe.yaml
+    export SPECGEN_EVAL_MAX_WORKERS=4
+
+%labels
+    Name verus_specgym_reproduce
+    SourceRevision db1e714b53103dad5856f74908c439039d3075fc

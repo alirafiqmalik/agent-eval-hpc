@@ -1,0 +1,20 @@
+job_name: verus-specgym-oracle-smoke
+n_attempts: 1
+n_concurrent_trials: 1
+timeout_multiplier: 1.0
+agent_setup_timeout_multiplier: 4.0
+environment_build_timeout_multiplier: 4.0
+retry:
+  max_retries: 0
+environment:
+  type: singularity
+  import_path: runners.unityhpc.environment:UnitySingularityEnvironment
+  kwargs:
+    default_exec_timeout_sec: 7200
+agents:
+- name: oracle
+datasets:
+- path: experiments/verus_specgym_reproduce/tasks/diagnostics/invalid-syntax
+- path: experiments/verus_specgym_reproduce/tasks/diagnostics/accept-all
+- path: experiments/verus_specgym_reproduce/tasks/diagnostics/known-correct
+- path: experiments/verus_specgym_reproduce/tasks/diagnostics/repeated-checker

@@ -1,0 +1,26 @@
+version = "1.0"
+
+[metadata]
+author_name = "Anmol Agarwal"
+author_email = "anmola@cs.cmu.edu"
+difficulty = "hard"
+category = "programming"
+tags = ["verus-gym", "codeforces", "contest-242", "problem-b"]
+source_task_id = "242__B"
+contest_id = "242"
+problem_index = "B"
+codeforces_rating = 1100
+codeforces_tags = ["implementation", "sortings"]
+
+[verifier]
+timeout_sec = 1200.0
+
+[agent]
+timeout_sec = 1800.0
+
+[environment]
+docker_image = "experiments/verus_specgym_reproduce/sandbox/sandbox.sif"
+build_timeout_sec = 1800.0
+cpus = 4
+memory_mb = 8192
+storage_mb = 32768

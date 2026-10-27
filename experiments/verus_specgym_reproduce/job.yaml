@@ -1,0 +1,22 @@
+job_name: verus-specgym
+n_attempts: 1
+n_concurrent_trials: 12
+timeout_multiplier: 2.0
+agent_setup_timeout_multiplier: 4.0
+environment_build_timeout_multiplier: 4.0
+retry:
+  max_retries: 0
+environment:
+  type: singularity
+  import_path: runners.unityhpc.environment:UnitySingularityEnvironment
+  kwargs:
+    default_exec_timeout_sec: 7200
+agents:
+- import_path: agentic_eval.preinstalled_swe_agent:PreinstalledSweAgent
+  model_name: hosted_vllm/specgym
+  env:
+    SWEAGENT_CONFIG: /opt/specgym-swe.yaml
+  kwargs:
+    max_input_tokens: '114688'
+datasets:
+- path: experiments/verus_specgym_reproduce/tasks/verus-specgym

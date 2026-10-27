@@ -1,0 +1,15 @@
+hardware:
+  id: unity-a100-80g-v1
+  gpu_count: 1
+  gpu_name: NVIDIA A100-SXM4-80GB
+  gpu_memory_mb: 81920
+  allocated_cpus: 8
+  allocated_memory_mb: 131072
+walltime_seconds: 10800
+model_server:
+  port: 8000
+  context_length: 32768
+  command: env VLLM_USE_FLASHINFER_SAMPLER=0 vllm serve {model} --revision c202236235762e1c871ad0ccb60c8ee5ba337b9a
+    --served-model-name Qwen3.5-9B --port {port} --tensor-parallel-size 1 --max-model-len
+    {context_length} --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser
+    qwen3_coder --language-model-only

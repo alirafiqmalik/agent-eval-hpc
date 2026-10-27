@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import shutil
 import stat
@@ -18,7 +19,11 @@ from agentic_eval.jobs import repository_root, validate_job
 
 
 def _agent(experiment: Path) -> dict:
-    config = yaml.safe_load((experiment / "agent/agent-config.yaml").read_text())
+    config = (
+        json.loads(os.environ["EVAL_AGENT_CONFIG"])
+        if os.environ.get("EVAL_AGENT_CONFIG")
+        else yaml.safe_load((experiment / "agent/agent-config.yaml").read_text())
+    )
     if type(config) is not dict or not isinstance(config.get("model"), str) or not config["model"]:
         raise ValueError("agent-config.yaml requires a model id")
     return config
@@ -36,13 +41,15 @@ def harbor_command(
     prompt = experiment / "agent/prompts/system.md"
     if not prompt.is_file():
         raise ValueError(f"missing system prompt: {prompt}")
+    job_config = yaml.safe_load(job.read_text())
+    environment = job_config.get("environment", {}).get("import_path") or "singularity"
     command = [
         harbor,
         "run",
         "--config",
         str(job),
         "--env",
-        "singularity",
+        environment,
         "--mounts",
         json.dumps(
             [
@@ -65,8 +72,10 @@ def harbor_command(
         command.extend(["--ak", f"version={version}"])
     if max_output_tokens := agent.get("max_output_tokens"):
         command.extend(["--ae", f"QWEN_CODE_MAX_OUTPUT_TOKENS={max_output_tokens}"])
-    if base_url:
-        command.extend(["--ak", f"base_url={base_url}", "--ak", "api_key=local"])
+    if base_url and all(a.get("name") == "qwen-coder" for a in job_config.get("agents", [])):
+        # Harbor reads the allocation's private OPENAI_API_KEY from its
+        # environment. An explicit key here would override that credential.
+        command.extend(["--ak", f"base_url={base_url}"])
     return command
 
 
@@ -89,6 +98,18 @@ def stage_job(job: Path, staging_dir: Path, image: Path) -> Path:
     """Copy Harbor tasks into writable output and point them at the built image."""
     root = repository_root(job.resolve())
     config = yaml.safe_load(job.read_text())
+    if override := os.environ.get("EVAL_JOB_CONFIG"):
+        # Campaigns can shard a normal Harbor config without modifying bundled source.
+        from harbor.models.job.config import JobConfig
+
+        config = json.loads(override)
+        JobConfig.model_validate(config)
+    for agent in config.get("agents", []):
+        if agent.get("model_name", "").startswith("hosted_vllm/"):
+            # LiteLLM's hosted_vllm provider uses its own credential name.
+            # Harbor resolves this reference at execution and scrubs the secret
+            # from artifacts; never serialize the ephemeral key into job YAML.
+            agent.setdefault("env", {}).setdefault("HOSTED_VLLM_API_KEY", "${OPENAI_API_KEY}")
     staging_dir.mkdir(parents=True, exist_ok=True)
     for section in ("datasets", "tasks"):
         for index, item in enumerate(config.get(section, [])):
@@ -101,7 +122,15 @@ def stage_job(job: Path, staging_dir: Path, image: Path) -> Path:
             if destination.exists():
                 shutil.rmtree(destination)
             if source.is_dir():
-                shutil.copytree(source, destination)
+                selected = item.get("task_names") if section == "datasets" else None
+                if selected:
+                    destination.mkdir(parents=True)
+                    for name in selected:
+                        if Path(name).name != name or name in (".", ".."):
+                            raise ValueError(f"invalid task name: {name}")
+                        shutil.copytree(source / name, destination / name)
+                else:
+                    shutil.copytree(source, destination)
                 task_files = destination.rglob("task.toml")
             else:
                 raise ValueError(f"task path is not a directory: {source}")
@@ -144,7 +173,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Run one Harbor job into a logs directory")
     parser.add_argument("job", type=Path)
     parser.add_argument("--jobs-dir", type=Path, required=True)
-    parser.add_argument("--base-url", required=True)
+    parser.add_argument("--base-url")
     parser.add_argument("--image", type=Path)
     args = parser.parse_args(argv)
     return run_job(args.job, args.jobs_dir, args.base_url, args.image)

@@ -1,0 +1,203 @@
+source_repository: https://github.com/formal-verif-is-cool/verus-spec-gym
+source_revision: db1e714b53103dad5856f74908c439039d3075fc
+paper: https://arxiv.org/abs/2605.26457
+models:
+  kimi-k2.6:
+    repository: moonshotai/Kimi-K2.6
+    revision: 7eb5002f6aadc958aed6a9177b7ed26bb94011bb
+    weight_bytes: 595148192736
+    tool_parser: kimi_k2
+    reasoning_parser: kimi_k2
+    tensor_parallel_size: 8
+    vllm_args:
+    - --language-model-only
+    suite: paper
+  glm-5.1:
+    repository: zai-org/GLM-5.1-FP8
+    revision: f396cf805182f4ca10fa675e1a99815b3ca384db
+    weight_bytes: 756162687872
+    tool_parser: glm47
+    reasoning_parser: glm45
+    tensor_parallel_size: 8
+    suite: paper
+  deepseek-v4pro:
+    repository: deepseek-ai/DeepSeek-V4-Pro
+    revision: b5968e9190ef611bbf34a7229255be88a0e937c1
+    weight_bytes: 864704792696
+    tool_parser: deepseek_v4
+    reasoning_parser: deepseek_v4
+    tensor_parallel_size: 8
+    vllm_args:
+    - --tokenizer-mode
+    - deepseek_v4
+    - --kv-cache-dtype
+    - fp8
+    - --block-size
+    - '256'
+    - --no-enable-flashinfer-autotune
+    - --compilation-config
+    - '{"mode":0,"cudagraph_mode":"FULL_DECODE_ONLY"}'
+    suite: paper
+  qwen3.5-9b:
+    suite: early
+    repository: Qwen/Qwen3.5-9B
+    revision: c202236235762e1c871ad0ccb60c8ee5ba337b9a
+    weight_bytes: 19306216416
+    tool_parser: qwen3_coder
+    reasoning_parser: qwen3
+    tensor_parallel_size: 1
+    vllm_args:
+    - --language-model-only
+    server_environment:
+      VLLM_USE_FLASHINFER_SAMPLER: '0'
+  qwen3.5-27b:
+    suite: early
+    repository: Qwen/Qwen3.5-27B
+    revision: fc05daec18b0a78c049392ed2e771dde82bdf654
+    weight_bytes: 55562872800
+    tool_parser: qwen3_coder
+    reasoning_parser: qwen3
+    tensor_parallel_size: 1
+    vllm_args:
+    - --language-model-only
+    server_environment:
+      VLLM_USE_FLASHINFER_SAMPLER: '0'
+local_execution:
+  context_length: 131072
+  max_output_tokens: 16384
+  calls_per_task: 400
+  dollar_cost_limit: 0
+  timeout_multiplier: 2.0
+  concurrent_trials: 12
+  tasks_per_shard: 48
+  max_input_tokens: 114688
+  temperature: 0.0
+  top_p: 1.0
+  smoke_tasks:
+  - verus-gym-1009-a
+  - verus-gym-1005-a
+  smoke_base_timeout_seconds: 900
+deviations:
+- Checkpointed cohorts preinstall the pinned SWE-agent revision and hash-locked client
+  dependencies. Completed Harbor trials are retained across allocations; no within-task
+  conversation or filesystem resume is claimed.
+- The public checker chooses unused run IDs across both detailed and compressed logs,
+  allowing retry after an agent deletes its detailed attempt logs. The pinned evaluator
+  and hidden-test grading remain unchanged.
+- Local inference only; closed models and GPT-specific repeat/codegen/judge experiments
+  excluded by user request.
+- Upstream sample script timeout_multiplier=2 (60 min agent) takes precedence over
+  paper 75 min.
+- Local inference has no API dollar cost; retain call and time limits instead of the
+  paper $2.50 API cap.
+- GLM uses the official FP8 release to fit one eight-H200 node.
+- No plotting/auxiliary analysis source is published in the referenced repositories;
+  empirical plots are reimplemented from documented formulas.
+- Local context is capped at 131072 tokens, with 114688 input and 16384 output tokens;
+  sampling retains SWE-agent defaults (temperature 0, top_p 1).
+- Singularity limits aggregate resources at the Slurm allocation; the verifier uses
+  its native SPECGEN_EVAL_MAX_WORKERS=4 setting per task.
+- The task workspace uses Harbor's preexisting /testbed repository adapter, linked
+  to /home/dev, with an empty Git baseline and the public template staged. This avoids
+  Harbor 0.24's literal local-repository path and preserves native SWE-agent submit.
+paper_table_1:
+  gemini-3.1pro:
+  - 0.778
+  - 0.824
+  - 0.909
+  - 0.926
+  - 0.892
+  - 0.891
+  gpt5.3-codex:
+  - 0.578
+  - 0.766
+  - 0.826
+  - 0.91
+  - 0.878
+  - 0.766
+  opus4.6:
+  - 0.511
+  - 0.587
+  - 0.671
+  - 0.705
+  - 0.658
+  - 0.655
+  deepseek-v4pro:
+  - 0.243
+  - 0.318
+  - 0.38
+  - 0.422
+  - 0.378
+  - 0.349
+  glm-5.1:
+  - 0.215
+  - 0.248
+  - 0.35
+  - 0.375
+  - 0.297
+  - 0.288
+  kimi-k2.6:
+  - 0.255
+  - 0.291
+  - 0.329
+  - 0.35
+  - 0.315
+  - 0.301
+hardware_selection:
+  observed_at: '2026-10-13T07:45:00Z'
+  source: Unity controller catalog/telemetry plus live Slurm node, queue, and reservation
+    queries
+  selected: 8 x H200 NVL on gpu-preempt; only discovered single-node placement with
+    enough native GPU memory for all three checkpoints
+  alternatives:
+    A100_80GB_8: '640 GB aggregate: insufficient for GLM FP8 and DeepSeek; Kimi leaves
+      limited context headroom. CPU offload would add unmeasured latency to time-limited
+      agent trials.'
+    H100_80GB_4: '320 GB aggregate: insufficient for these checkpoints'
+    L40S_48GB_4: '192 GB aggregate: insufficient for these checkpoints'
+  historical_h200_preempt_wait_p50_seconds: 2843
+  historical_sample_count: 266
+  live_queue_caveat: gpu057 has private allocations with up to 11 days 15 hours remaining;
+    historical averages do not predict this 8-GPU request. No near-term start is guaranteed.
+  hardware_verified_by: controller allocation receipt; model memory and kernel compatibility
+    remain subject to GPU smoke tests
+  slurm_estimated_start: '2026-10-25T01:56:39'
+  controller_requirement: Unity HPC controller 0.16.2 or later, supporting gpu_request_by_constraint
+  other_usable_gpus:
+    a100_80gb: 8-GPU nodes (including gpu022-024) and 4-GPU nodes; select one card
+      on short QoS for Qwen3.5-9B. 2026-10-13 09:01 UTC test-only estimated 10:48
+      UTC start.
+    h100_80gb: uri-gpu009/012, four GPUs each, InfiniBand. Select one card on normal
+      QoS for Qwen3.5-27B; estimate October 14.
+    l40s_48gb: Fits native 9B weights; October 25/27 estimates lose to A100/H100 in
+      this snapshot.
+    a100_16_multinode: Two 8-GPU A100 80GB nodes provide 1280 GiB aggregate and InfiniBand;
+      test-only estimate October 19. This is a capacity candidate, not a verified
+      serving placement. Current controller supports one-node jobs; pipeline/Ray launch
+      and checkpoint-specific Ampere quantization kernels require separate validation.
+    blackwell_mig_48gb: gpu058 exposes eight 48GB MIG slices of RTX PRO 6000 Blackwell
+      Server Edition. A single slice has capacity for Qwen3.5-9B, but MIG-specific
+      device attestation and kernels are unvalidated; aggregate 384GB cannot host
+      the native paper checkpoints.
+excluded_artifacts:
+  closed_model_evaluations:
+  - Table 1 closed-model rows
+  - Appendix F.4 repeated GPT trials
+  - Appendix F.6 GPT code generation
+  - Table 4 / Appendix F.7 GPT judge
+  descriptive_not_run_results:
+  - Figures 1-4, 6-9, 12 (method diagrams and examples)
+  - Tables 2-3 (related work and testcase examples)
+  - Tables 5-9 (published qualitative case studies, including closed models)
+  adapted_artifacts:
+  - Figure 16 uses intersections of the three local models
+early_execution:
+  context_length: 32768
+  max_input_tokens: 24576
+  max_output_tokens: 8192
+  concurrent_trials: 4
+  tasks_per_shard: 4
+early_comparison_note: Additional local baselines, absent from the paper. Keep separate
+  from paper-model reproduction; no same-model paper deltas exist. Use the same 581
+  tasks, 400-call and 60-minute agent limits, with a 32K context cap.
+paper_pdf_sha256: 4865494ceedf3da946cc5970d1815b5b534ac0f6793a50dfdf196dca6ec4560d

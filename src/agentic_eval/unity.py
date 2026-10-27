@@ -29,13 +29,20 @@ def load_runner_request(job_path: Path, runner_config: Path) -> tuple[dict, int,
         raise ValueError("runner.yaml requires a positive walltime_seconds")
     if type(server) is not dict:
         raise ValueError("runner.yaml requires a model_server mapping")
+    mode = server.get("mode", "local")
+    if mode not in ("local", "none"):
+        raise ValueError("model_server.mode must be local or none")
     port = server.get("port")
     context = server.get("context_length")
     command = server.get("command")
-    if type(port) is not int or port <= 0 or type(context) is not int or context <= 0:
+    if mode == "local" and (
+        type(port) is not int or port <= 0 or type(context) is not int or context <= 0
+    ):
         raise ValueError("model_server requires a positive port and context_length")
     placeholders = ("{model}", "{port}", "{context_length}")
-    if type(command) is not str or any(token not in command for token in placeholders):
+    if mode == "local" and (
+        type(command) is not str or any(token not in command for token in placeholders)
+    ):
         raise ValueError("model_server.command must include {model}, {port}, and {context_length}")
     connection = yaml.safe_load(runner_config.read_text())
     attempts = connection.get("max_attempts") if type(connection) is dict else None

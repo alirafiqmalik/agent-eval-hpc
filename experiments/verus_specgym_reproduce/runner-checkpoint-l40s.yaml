@@ -1,0 +1,34 @@
+configuration_label: q9-l40s-bf16-c128k-o32k-t06-p95-p2-k2-w1
+hardware:
+  id: unity-l40s-single-specgym-v1
+  gpu_count: 1
+  gpu_name: NVIDIA L40S
+  gpu_memory_mb: 46068
+  gpu_memory_tolerance_mb: 0
+  allocated_cpus: 8
+  allocated_memory_mb: 98304
+walltime_seconds: 9000
+model_server:
+  local_model_metadata: true
+  port: 8000
+  context_length: 131072
+  # Sequential shard reads avoid NFS mmap/prefetch stalls during startup.
+  extra_args:
+  - --safetensors-load-strategy
+  - eager
+  - --dtype
+  - bfloat16
+evaluation:
+  context_length: 131072
+  max_input_tokens: 98304
+  max_output_tokens: 32768
+  concurrent_trials: 2
+  tasks_per_shard: 2
+  temperature: 0.6
+  top_p: 0.95
+  completion_kwargs:
+    extra_body:
+      top_k: 20
+      min_p: 0.0
+  smoke_base_timeout_seconds: 1200
+smoke_walltime_seconds: 7200

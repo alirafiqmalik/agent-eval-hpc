@@ -1,0 +1,32 @@
+{
+  "contest_id": 1214,
+  "evaluator_scripts_source_path": "/mnt/vast/home/anmol.agarwal/anmol_oct/verus_gym_pruned/src/verus_gym_evals",
+  "examples_source_path": "/mnt/vast/home/anmol.agarwal/anmol_oct/verus_gym/data/task_running_artifacts/specgen_eval_related/example_exec_spec",
+  "humaneval_verus_examples_source_path": "/mnt/vast/home/anmol.agarwal/anmol_oct/verus_gym/external_code/verus_documentation/humaneval_verus_solved_examples",
+  "local_task_id": "verus-gym-1214-a",
+  "manifest_summary": {
+    "generated_at_utc": "2026-04-27T06:35:06.436831+00:00",
+    "problem_set_name": "apr_v1_priority_with_march_with_downloaded_subs",
+    "problem_set_size": null,
+    "unprivileged_sample_test_ids_by_bucket": {
+      "post_complete": [
+        "submission_page_1",
+        "submission_page_2",
+        "submission_page_3"
+      ],
+      "post_sound": [],
+      "pre_complete": [
+        "submission_page_1",
+        "submission_page_2",
+        "submission_page_3"
+      ],
+      "pre_sound": []
+    },
+    "version": "v1"
+  },
+  "problem_index": "A",
+  "runtime_bundle_path": "/mnt/vast/home/anmol.agarwal/anmol_oct/verus_gym_pruned/package_binaries/verus_gym_specgen_check_runtime_py312.tar.gz",
+  "some_more_examples_source_path": "/mnt/vast/home/anmol.agarwal/anmol_oct/verus_gym/external_code/verus_documentation/some_more_examples",
+  "source_task_id": "1214__A",
+  "verus_documentation_source_path": "/mnt/vast/home/anmol.agarwal/anmol_oct/verus_gym/external_code/verus_documentation/guide"
+}
