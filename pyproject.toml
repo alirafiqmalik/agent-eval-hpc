@@ -1,7 +1,8 @@
 [project]
-name = "agentic-sfv-framework"
+name = "agent-eval-hpc"
 version = "0.1.0"
-description = "Harbor jobs for local runs and Unity HPC"
+description = "Configurable agent evaluation on Unity HPC, built on Harbor"
+readme = "README.md"
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "harbor==0.24.0",
@@ -16,6 +17,9 @@ plots = ["matplotlib>=3.10,<4"]
 
 [project.scripts]
 agentic-eval = "agentic_eval.cli:main"
+
+[project.urls]
+Repository = "https://github.com/alirafiqmalik/agent-eval-hpc"
 
 [build-system]
 requires = ["hatchling>=1.27,<2"]
