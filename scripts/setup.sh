@@ -68,6 +68,6 @@ import sys
 
 if sys.version_info[:2] != (3, 12):
     raise SystemExit("The project requires Python 3.12.")
-print("Installed agentic-sfv-framework " + importlib.metadata.version("agentic-sfv-framework"))
+print("Installed agent-eval-hpc " + importlib.metadata.version("agent-eval-hpc"))
 '
 printf 'Local setup complete. Run make check and make validate.\n'
