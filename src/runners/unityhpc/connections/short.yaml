@@ -1,6 +1,6 @@
 gpu_type: a100
 constraint: a100-80g&sapphirerapids
-partitions: [gpu, gpu-preempt]
+partitions: [gpu-highvram, gpu-preempt-highvram]
 cpu_partitions: [cpu, cpu-preempt]
 qos: short
 max_concurrent: 1

@@ -2,7 +2,7 @@ gpu_type: rtx_8000
 constraint: rtx_8000
 gpu_request_by_constraint: true
 partitions:
-- gpu
+- gpu-highvram
 cpu_partitions:
 - cpu
 max_concurrent: 1

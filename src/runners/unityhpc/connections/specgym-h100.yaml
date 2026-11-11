@@ -1,8 +1,8 @@
 gpu_type: h100
 constraint: h100
 partitions:
-- gpu
-- gpu-preempt
+- gpu-highvram
+- gpu-preempt-highvram
 cpu_partitions:
 - cpu
 - cpu-preempt

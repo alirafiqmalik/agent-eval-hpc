@@ -2,7 +2,7 @@ gpu_type: l40s
 constraint: l40s
 gpu_request_by_constraint: true
 partitions:
-- gpu-preempt
+- gpu-preempt-highvram
 cpu_partitions:
 - cpu
 max_concurrent: 1

@@ -2,7 +2,7 @@ gpu_type: h200_nvl
 constraint: h200_nvl
 gpu_request_by_constraint: true
 partitions:
-- gpu-preempt
+- gpu-preempt-highvram
 cpu_partitions:
 - cpu
 max_concurrent: 1
