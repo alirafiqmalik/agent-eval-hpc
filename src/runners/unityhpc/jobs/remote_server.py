@@ -13,8 +13,13 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from urllib.error import URLError
-from urllib.request import Request, urlopen
+from urllib.error import HTTPError, URLError
+
+if __package__:
+    from .local_server import attest_endpoint, select_port, wait_ready
+else:
+    # The controller also runs this file directly from the source bundle.
+    from local_server import attest_endpoint, select_port, wait_ready
 
 
 def wait_endpoint(path: Path, timeout: int = 7200) -> dict:
@@ -23,16 +28,16 @@ def wait_endpoint(path: Path, timeout: int = 7200) -> dict:
         if path.is_file():
             endpoint = json.loads(path.read_text())
             try:
-                req = Request(
-                    endpoint["url"] + "/models",
-                    headers={"Authorization": "Bearer " + endpoint["api_key"]},
-                )
-                with urlopen(req, timeout=10) as response:
-                    if response.status == 200:
-                        return endpoint
-            except (URLError, TimeoutError):
+                attest_endpoint(endpoint["url"], endpoint["api_key"], endpoint["model"])
+                return endpoint
+            except HTTPError as error:
+                if error.code in (401, 403):
+                    raise RuntimeError("Paired endpoint belongs to another model server") from error
+                if error.code not in (404, 503):
+                    raise
+            except (URLError, TimeoutError, ConnectionError):
                 pass
-        time.sleep(5)
+        time.sleep(min(5, max(0, deadline - time.monotonic())))
     raise TimeoutError("Paired model server did not become ready within two hours")
 
 
@@ -53,16 +58,18 @@ def serve(output: Path) -> None:
     environment["HF_HOME"] = str(root / "hf")
     # A fresh key per allocation prevents other cluster users using this server.
     api_key = secrets.token_urlsafe(32)
-    with socket.socket() as sock:
-        sock.bind(("", 0))
-        port = sock.getsockname()[1]
+    port = select_port("")
     command = shlex.split(
         server["command"].format(
             model=agent["model"], port=port, context_length=server["context_length"]
         )
     )
     command.extend(["--host", "0.0.0.0", "--api-key", api_key])
-    endpoint = {"url": f"http://{socket.gethostname()}:{port}/v1", "api_key": api_key}
+    endpoint = {
+        "url": f"http://{socket.gethostname()}:{port}/v1",
+        "api_key": api_key,
+        "model": agent["model"],
+    }
     record = {
         "architecture": platform.machine(),
         "model": agent["model"],
@@ -78,6 +85,9 @@ def serve(output: Path) -> None:
             command, env=environment, stdout=stream, stderr=subprocess.STDOUT
         )
         try:
+            # Never advertise a port until our live process serves the requested
+            # checkpoint and enforces this allocation's key.
+            wait_ready(process, f"http://127.0.0.1:{port}/v1", api_key, agent["model"])
             pending = output / "endpoint.pending"
             pending.write_text(json.dumps(endpoint))
             pending.chmod(0o600)

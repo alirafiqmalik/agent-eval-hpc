@@ -17,11 +17,11 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 
-def select_port() -> int:
+def select_port(host: str = "127.0.0.1") -> int:
     # The socket cannot stay bound while vLLM binds it. Authentication and model
     # attestation make a race fail closed instead of accepting another job.
     with socket.socket() as sock:
-        sock.bind(("127.0.0.1", 0))
+        sock.bind((host, 0))
         return sock.getsockname()[1]
 
 

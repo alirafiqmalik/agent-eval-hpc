@@ -14,7 +14,9 @@ from types import SimpleNamespace
 import pytest
 import yaml
 
+from runners.unityhpc.jobs import remote_server
 from runners.unityhpc.jobs.local_server import attest_endpoint, select_port, wait_ready
+from runners.unityhpc.jobs.remote_server import wait_endpoint
 
 
 @contextmanager
@@ -71,6 +73,76 @@ def test_server_dying_during_attestation_is_not_ready():
         own = SimpleNamespace(poll=lambda: next(states), returncode=1)
         with pytest.raises(RuntimeError, match="during readiness"):
             wait_ready(own, url, "own-key", "/models/9b", timeout=1)
+
+
+@pytest.mark.parametrize(
+    "actual,key,enforce_auth,error",
+    [
+        ("/models/27b", "own-key", True, "different model"),
+        ("/models/9b", "foreign-key", True, "belongs to another"),
+        ("/models/9b", "own-key", False, "does not enforce authentication"),
+    ],
+)
+def test_paired_worker_rejects_foreign_endpoint(tmp_path, actual, key, enforce_auth, error):
+    with endpoint(actual, key, enforce_auth=enforce_auth) as url:
+        path = tmp_path / "endpoint.json"
+        path.write_text(json.dumps({"url": url, "api_key": "own-key", "model": "/models/9b"}))
+        with pytest.raises(RuntimeError, match=error):
+            wait_endpoint(path, timeout=1)
+
+
+def test_paired_worker_accepts_attested_endpoint(tmp_path):
+    with endpoint("/models/9b", "own-key") as url:
+        path = tmp_path / "endpoint.json"
+        expected = {"url": url, "api_key": "own-key", "model": "/models/9b"}
+        path.write_text(json.dumps(expected))
+        assert wait_endpoint(path, timeout=1) == expected
+
+
+def test_paired_server_bind_failure_never_publishes_endpoint(tmp_path, monkeypatch):
+    with endpoint("/models/9b", "foreign-key", enforce_auth=False) as url:
+        port = int(url.split(":")[2].split("/")[0])
+        monkeypatch.setattr(remote_server, "select_port", lambda host: port)
+        monkeypatch.setattr(remote_server.importlib.metadata, "version", lambda name: "test")
+        monkeypatch.setenv("EVAL_RUNTIME_ROOT", str(tmp_path))
+        monkeypatch.setenv("EVAL_AGENT_CONFIG", json.dumps({"model": "/models/9b"}))
+        monkeypatch.setenv(
+            "EVAL_RUNNER_CONFIG",
+            json.dumps(
+                {
+                    "model_server": {
+                        "context_length": 32,
+                        "command": shlex.join(
+                            [
+                                sys.executable,
+                                "-c",
+                                "from http.server import HTTPServer; "
+                                'HTTPServer(("127.0.0.1", {port}), None)',
+                            ]
+                        ),
+                    }
+                }
+            ),
+        )
+        popen = subprocess.Popen
+
+        def failed_server(*args, **kwargs):
+            process = popen(*args, **kwargs)
+            assert process.wait(timeout=5) != 0
+            poll = process.poll
+
+            def checked_poll():
+                assert not (tmp_path / "endpoint.json").exists()
+                return poll()
+
+            process.poll = checked_poll
+            return process
+
+        monkeypatch.setattr(remote_server.subprocess, "Popen", failed_server)
+        with pytest.raises(RuntimeError, match="Own model server exited"):
+            remote_server.serve(tmp_path)
+        assert "Address already in use" in (tmp_path / "model-server.log").read_text()
+        assert not (tmp_path / "endpoint.json").exists()
 
 
 def test_concurrent_supervisors_keep_same_alias_models_and_credentials_separate(tmp_path):
