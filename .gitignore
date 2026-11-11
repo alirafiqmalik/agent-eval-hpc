@@ -18,8 +18,7 @@ experiments/*/output/
 experiments/*/sandbox/*.sif
 node_modules/
 .DS_Store
-/src/runners/unityhpc/*-local.yaml
-/src/runners/unityhpc/connections/*-local.yaml
+/src/runners/unityhpc/connections/local.yaml
 .cursor
 .agent
 .claude

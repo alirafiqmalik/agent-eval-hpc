@@ -21,6 +21,7 @@ from campaign import (
 
 from agentic_eval.unity import request_for
 from runners.discovery import load_runner
+from runners.unityhpc.connection import load_connection
 
 
 def run_model_diagnostic(source: Path, options, tasks: list[str], *, smoke: bool, output: Path):
@@ -176,9 +177,9 @@ def main() -> None:
         runtime_config=experiment / "runner-audit-a100.yaml",
         connection=connection,
         model_cache=Path(
-            yaml.safe_load(
-                (source / "src/runners/unityhpc/connections/verus-specgym.yaml").read_text()
-            )["model_cache"]
+            load_connection(source / "src/runners/unityhpc/connections/verus-specgym.yaml")[
+                "model_cache"
+            ]
         ),
         current_id=args.run_id
         + (

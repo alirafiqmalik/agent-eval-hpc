@@ -28,7 +28,7 @@ help:
 	  '' \
 	  'Set EXPERIMENT to another job.yaml. Set a new RUN_ID for each submission.' \
 	  'Set RUNNER_CONFIG to select a Unity connection.' \
-	  'Other Unity accounts can set UNITYHPC_CONTROLLER_URL and UNITYHPC_RUNTIME_ROOT.'
+	  'Unity setup: copy src/runners/unityhpc/connections/local.example.yaml to local.yaml and set your values.'
 
 setup:
 	./scripts/setup.sh

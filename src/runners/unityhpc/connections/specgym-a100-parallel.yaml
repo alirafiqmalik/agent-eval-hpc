@@ -1,5 +1,3 @@
-controller_url: http://127.0.0.1:8301
-runtime_root: /work/<pi_group>/<user>/agentic-sfv-runtime
 gpu_type: a100
 constraint: a100-80g&sapphirerapids
 partitions:
@@ -15,4 +13,3 @@ allocation_limits:
   gpu_hours: null
   cpu_hours: null
 download_limit_gib: null
-model_cache: /scratch3/workspace/<user>-verus-specgym-reproduce/models

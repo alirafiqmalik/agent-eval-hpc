@@ -466,3 +466,32 @@ def test_model_metadata_staging_keeps_weights_and_optional_lookups_local(tmp_pat
 
     shutil.rmtree(destination)
     assert (source / "weights.safetensors").read_bytes() == b"unchanged pinned weights"
+
+
+def test_tracked_connection_profiles_hold_no_per_user_settings():
+    import yaml
+
+    from runners.unityhpc.connection import CONNECTIONS, LOCAL_KEYS
+
+    for profile in CONNECTIONS.glob("*.yaml"):
+        if profile.name.startswith("local"):
+            continue
+        assert not LOCAL_KEYS & set(yaml.safe_load(profile.read_text())), profile.name
+
+
+def test_connection_without_local_settings_names_the_template(tmp_path, monkeypatch):
+    from runners.unityhpc.connection import CONNECTIONS, load_connection
+
+    monkeypatch.setenv("UNITYHPC_LOCAL_CONFIG", str(tmp_path / "absent.yaml"))
+    with pytest.raises(ValueError, match="local.example.yaml"):
+        load_connection(CONNECTIONS / "config.yaml")
+
+
+def test_local_settings_cannot_override_hardware(tmp_path, monkeypatch):
+    from runners.unityhpc.connection import CONNECTIONS, load_connection
+
+    local = tmp_path / "local.yaml"
+    local.write_text("controller_url: http://127.0.0.1:1\nruntime_root: /work/x\ngpu_type: h100\n")
+    monkeypatch.setenv("UNITYHPC_LOCAL_CONFIG", str(local))
+    with pytest.raises(ValueError, match="gpu_type"):
+        load_connection(CONNECTIONS / "config.yaml")

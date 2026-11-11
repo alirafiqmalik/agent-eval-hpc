@@ -17,6 +17,7 @@ import yaml
 
 from agentic_eval.unity import request_for
 from runners.discovery import load_runner
+from runners.unityhpc.connection import load_connection
 
 ROOT = Path(__file__).resolve().parents[3]
 RELATIVE = Path("experiments/verus_specgym_reproduce")
@@ -131,6 +132,9 @@ def main() -> None:
             if download:
                 jobs[label].extend(["--download-run-id", download])
             if model_cache := profile.get("model_cache"):
+                # Matrices name checkpoints under each user's runtime, not a fixed path.
+                connection = load_connection(profile_connections / profile["connection"])
+                model_cache = model_cache.replace("{runtime_root}", connection["runtime_root"])
                 jobs[label].extend(["--model-cache", model_cache])
             jobs[label].extend(["--parallel-shards", str(profile.get("parallel_shards", 1))])
             if profile.get("task_checkpoints"):

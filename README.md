@@ -130,18 +130,27 @@ datasets:
 | Instructions and skills | `experiments/<name>/agent/prompts/system.md` and `agent/skills/` |
 | GPU/CPU request, memory, wall time, serving command | `experiments/<name>/runner.yaml` |
 | Sandbox dependencies | `experiments/<name>/sandbox/sandbox.def` |
-| Controller address, partitions, retries, runtime path | `src/runners/unityhpc/connections/<profile>.yaml` |
+| Controller address, runtime path, model cache (per user, untracked) | `src/runners/unityhpc/connections/local.yaml` |
+| GPU type, partitions, QoS, retries (shared) | `src/runners/unityhpc/connections/<profile>.yaml` |
 | Grading and result processing | `experiments/<name>/tools/` |
 
 ## Run on Unity
 
 Cluster execution requires a reachable **Unity HPC controller**, an account with access to the selected partitions, and a prepared cluster runtime with Harbor, the model-serving dependencies, and Apptainer/Singularity. Local setup does not install that cluster runtime.
 
-Start from the [connection configuration](src/runners/unityhpc/connections/config.yaml), which contains a deployment-specific runtime path. Set your controller endpoint and absolute runtime directory, or use a local connection file such as `connections/my-local.yaml` (ignored by Git):
+The tracked profiles in `src/runners/unityhpc/connections/` hold only shared Unity settings: GPU type, constraint, partitions, QoS, and retries. Your controller address and cluster paths go in an untracked `local.yaml`, which every profile merges. Create it from the [template](src/runners/unityhpc/connections/local.example.yaml):
+
+```bash
+cp src/runners/unityhpc/connections/local.example.yaml src/runners/unityhpc/connections/local.yaml
+# Set controller_url and runtime_root. Verus SpecGym also uses model_cache and workspace_lease.
+```
+
+Environment variables override the file for a single shell:
 
 ```bash
 export UNITYHPC_CONTROLLER_URL="http://127.0.0.1:8301"
 export UNITYHPC_RUNTIME_ROOT="/absolute/path/to/your/prepared/runtime"
+export UNITYHPC_LOCAL_CONFIG="/path/to/another/local.yaml"   # optional
 ```
 
 Use the Unity controller's current inventory and telemetry to select available resources, then align the experiment's `runner.yaml` with your connection profile. Committed hardware profiles describe particular deployments; inspect them before submitting.

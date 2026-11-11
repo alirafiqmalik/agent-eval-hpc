@@ -1,0 +1,20 @@
+# Per-user Unity settings. Copy this file to local.yaml (gitignored) and set your values.
+# Every profile in this folder is merged with local.yaml. The environment variables
+# UNITYHPC_CONTROLLER_URL and UNITYHPC_RUNTIME_ROOT override the two required keys.
+# UNITYHPC_LOCAL_CONFIG selects a different local file.
+
+# Required. The Unity controller that this machine can reach, for example through an SSH tunnel.
+controller_url: http://127.0.0.1:8301
+# Required. Absolute path on Unity to your prepared runtime (Harbor, vLLM, Apptainer).
+runtime_root: /work/<pi_group>/<user>/agentic-sfv-runtime
+
+# Optional. Verus SpecGym only: model checkpoints on Unity scratch.
+model_cache: /scratch3/workspace/<user>-verus-specgym-reproduce/models
+# Optional. Verus SpecGym only: keeps the scratch workspace for model_cache alive.
+workspace_lease:
+  name: verus-specgym-reproduce
+  ssh_host: unity
+  identity_file: ~/.ssh/<unity_key>
+  duration_days: 30
+# Optional. ARM GPU (gh200) profiles only: the runtime for the model server.
+server_runtime_root: /work/<pi_group>/<user>/agentic-sfv-arm-runtime

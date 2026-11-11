@@ -9,7 +9,7 @@ import time
 from datetime import UTC, datetime
 from pathlib import Path
 
-import yaml
+from runners.unityhpc.connection import load_connection
 
 
 def process_identity(pid: int) -> str | None:
@@ -52,7 +52,7 @@ def main() -> None:
     parser.add_argument("--parent-pid", type=int, action="append", default=[])
     parser.add_argument("--once", action="store_true")
     args = parser.parse_args()
-    config = yaml.safe_load(args.connection.read_text())["workspace_lease"]
+    config = load_connection(args.connection)["workspace_lease"]
     if args.once:
         raise SystemExit(0 if renew(config) else 1)
     if not args.parent_pid:

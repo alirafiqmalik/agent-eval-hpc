@@ -11,8 +11,6 @@ import re
 from datetime import datetime
 from pathlib import Path
 
-import yaml
-
 from runners.budget import Budget
 from runners.interface import (
     ExecutionConflictError,
@@ -21,6 +19,7 @@ from runners.interface import (
     request_digest,
 )
 from runners.unityhpc.client import Client, ControllerError
+from runners.unityhpc.connection import load_connection
 
 
 class UnityRunner:
@@ -37,18 +36,13 @@ class UnityRunner:
         "artifacts",
         "experiments/*/output",
         "experiments/*/sandbox/*.sif",
+        "src/runners/unityhpc/connections/local.yaml",
         "AGENTS.md",
         "CLAUDE.md",
     ]
 
     def __init__(self, config: Path, budget: Budget | None = None):
-        self.config = yaml.safe_load(config.read_text())
-        for key, variable in (
-            ("controller_url", "UNITYHPC_CONTROLLER_URL"),
-            ("runtime_root", "UNITYHPC_RUNTIME_ROOT"),
-        ):
-            if value := os.environ.get(variable):
-                self.config[key] = value
+        self.config = load_connection(config)
         if not Path(self.config["runtime_root"]).is_absolute():
             raise ValueError("Unity runtime_root must be an absolute path")
         download_limit = self.config["download_limit_gib"]

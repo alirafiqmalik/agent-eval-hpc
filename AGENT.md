@@ -35,7 +35,8 @@ src/runners/                Shared runner library.
 src/runners/unityhpc/       Unity client, task.sh, and the cluster connection.
 ```
 
-The cluster address, partitions, and retry count stay in `src/runners/unityhpc/connections/config.yaml`.
+Shared Unity profiles (partitions, GPU type, retries) stay in `src/runners/unityhpc/connections/<profile>.yaml`.
+Per-user settings (controller URL, runtime and model paths, SSH lease) go in the gitignored `connections/local.yaml`, copied from `local.example.yaml`. Never add them to a tracked profile.
 `output/` is gitignored. Local tool caches live in `.cache/`, which is also gitignored.
 `AGENT.md` is this guide. `AGENTS.md` and `CLAUDE.md` are symlinks to it.
 

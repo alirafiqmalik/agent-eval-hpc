@@ -31,6 +31,7 @@ from unity_eval import (  # noqa: E402
 from agentic_eval.unity import request_for  # noqa: E402
 from runners.discovery import load_runner  # noqa: E402
 from runners.interface import ExecutionNotFoundError, ExecutionRequest, request_digest  # noqa: E402
+from runners.unityhpc.connection import load_connection  # noqa: E402
 
 
 class SmokeGateError(RuntimeError):
@@ -640,15 +641,9 @@ def main() -> None:
         args.runtime_config = EXPERIMENT / (
             "runner.yaml" if args.suite == "paper" else "runner-early.yaml"
         )
-    connection = yaml.safe_load(args.connection.read_text())
+    connection = load_connection(args.connection)
     if args.model_cache is None and connection.get("model_cache"):
         args.model_cache = Path(connection["model_cache"])
-    if args.model_cache is None:
-        args.model_cache = Path(
-            yaml.safe_load(
-                (ROOT / "src/runners/unityhpc/connections/verus-specgym.yaml").read_text()
-            )["model_cache"]
-        )
     if args.model_cache is None or not args.model_cache.is_absolute():
         parser.error(
             "Set --model-cache to the Unity scratch model directory (or SPECGYM_MODEL_CACHE)"
@@ -703,7 +698,7 @@ def main() -> None:
         raise RuntimeError("Existing campaign uses a different checkpoint directory")
     save_json(state_path, state)
     lease_connection = ROOT / "src/runners/unityhpc/connections/verus-specgym.yaml"
-    lease_config = yaml.safe_load(lease_connection.read_text())
+    lease_config = load_connection(lease_connection)
     if args.action != "collect" and str(args.model_cache) == lease_config.get("model_cache"):
         with (output / "workspace-lease.log").open("a") as stream:
             subprocess.Popen(
