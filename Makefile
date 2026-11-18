@@ -11,7 +11,7 @@ RUNNER_CONFIG ?= src/runners/unityhpc/connections/config.yaml
 
 EVAL = $(UV) run --locked agentic-eval
 
-.PHONY: help setup check validate run require-run submit status fetch evaluate collect
+.PHONY: help setup check validate run require-run plan submit status fetch evaluate collect
 
 help:
 	@printf '%s\n' \
@@ -19,6 +19,7 @@ help:
 	  'make check                       Run tests and lint checks' \
 	  'make validate                    Check EXPERIMENT and its Harbor tasks' \
 	  'make run RUN_ID=<id>             Run EXPERIMENT locally with harbor run' \
+	  'make plan RUN_ID=<id>            Check the Unity request without a submit' \
 	  'make submit RUN_ID=<id>          Submit EXPERIMENT to Unity' \
 	  'make status RUN_ID=<id>          Read Unity status' \
 	  'make fetch RUN_ID=<id>           Download the run into the experiment output' \
@@ -28,6 +29,7 @@ help:
 	  '' \
 	  'Set EXPERIMENT to another job.yaml. Set a new RUN_ID for each submission.' \
 	  'Set RUNNER_CONFIG to select a Unity connection.' \
+	  'Set RUNNER_FILE to use another runner.yaml, for example another GPU.' \
 	  'Unity setup: copy src/runners/unityhpc/connections/local.example.yaml to local.yaml and set your values.'
 
 setup:
@@ -47,8 +49,11 @@ run: require-run
 require-run:
 	@test -n "$(RUN_ID)" || { printf '%s\n' 'Set RUN_ID to a new run identity, for example RUN_ID=starter-001.' >&2; exit 2; }
 
+plan: require-run
+	$(EVAL) plan "$(EXPERIMENT)" --run-id "$(RUN_ID)" --runner-config "$(RUNNER_CONFIG)" $(if $(WALLTIME_SECONDS),--walltime-seconds "$(WALLTIME_SECONDS)") $(if $(RUNNER_FILE),--runner-file "$(RUNNER_FILE)")
+
 submit: require-run
-	$(EVAL) submit "$(EXPERIMENT)" --run-id "$(RUN_ID)" --runner-config "$(RUNNER_CONFIG)" $(if $(WALLTIME_SECONDS),--walltime-seconds "$(WALLTIME_SECONDS)")
+	$(EVAL) submit "$(EXPERIMENT)" --run-id "$(RUN_ID)" --runner-config "$(RUNNER_CONFIG)" $(if $(WALLTIME_SECONDS),--walltime-seconds "$(WALLTIME_SECONDS)") $(if $(RUNNER_FILE),--runner-file "$(RUNNER_FILE)")
 
 status: require-run
 	$(EVAL) status --run-id "$(RUN_ID)" --runner-config "$(RUNNER_CONFIG)"
@@ -57,7 +62,7 @@ fetch: require-run
 	$(EVAL) fetch --run-id "$(RUN_ID)" --runner-config "$(RUNNER_CONFIG)" --output "$(EXPERIMENT_DIR)/output/$(RUN_ID)"
 
 evaluate: require-run
-	./scripts/run_unity_eval.sh "$(EXPERIMENT)" --run-id "$(RUN_ID)" --runner-config "$(RUNNER_CONFIG)" $(if $(WALLTIME_SECONDS),--walltime-seconds "$(WALLTIME_SECONDS)")
+	./scripts/run_unity_eval.sh "$(EXPERIMENT)" --run-id "$(RUN_ID)" --runner-config "$(RUNNER_CONFIG)" $(if $(WALLTIME_SECONDS),--walltime-seconds "$(WALLTIME_SECONDS)") $(if $(RUNNER_FILE),--runner-file "$(RUNNER_FILE)")
 
 collect: require-run
 	./scripts/collect_unity_eval.sh "$(EXPERIMENT)" --run-id "$(RUN_ID)" --runner-config "$(RUNNER_CONFIG)"

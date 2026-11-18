@@ -165,6 +165,9 @@ def parser() -> argparse.ArgumentParser:
         action.add_argument("--poll-seconds", type=int, default=30)
         if name == "run":
             action.add_argument("--walltime-seconds", type=int)
+            action.add_argument(
+                "--runner-file", type=Path, help="use this file in place of the job's runner.yaml"
+            )
     return command
 
 
@@ -178,7 +181,9 @@ def main(argv: list[str] | None = None) -> int:
     runner = load_runner(root, "unityhpc", args.runner_config)
     if args.action == "run":
         validate_experiment(job)
-        request = request_for(root, job, args.run_id, args.runner_config, args.walltime_seconds)
+        request = request_for(
+            root, job, args.run_id, args.runner_config, args.walltime_seconds, args.runner_file
+        )
         submit_with_retries(runner, request)
         print(f"submitted {args.run_id}", flush=True)
     campaign = wait_for_terminal(runner, args.run_id, args.poll_seconds)

@@ -1,0 +1,14 @@
+hardware:
+  id: unity-a100-80g-vericontest-v1
+  gpu_count: 1
+  gpu_name: NVIDIA A100-SXM4-80GB
+  gpu_memory_mb: 81920
+  allocated_cpus: 8
+  allocated_memory_mb: 65536
+walltime_seconds: 5400
+model_server:
+  port: 8000
+  context_length: 16384
+  command: env VLLM_USE_FLASHINFER_SAMPLER=0 vllm serve {model} --revision aedcc2d42b622764e023cf882b6652e646b95671
+    --served-model-name vericontest --port {port} --tensor-parallel-size 1 --max-model-len
+    {context_length} --dtype half

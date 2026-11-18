@@ -1,0 +1,24 @@
+job_name: qwen14b-vericontest-codegen-pilot
+n_attempts: 1
+n_concurrent_trials: 1
+agent_setup_timeout_multiplier: 4.0
+environment_build_timeout_multiplier: 4.0
+retry:
+  max_retries: 0
+environment:
+  type: singularity
+agents:
+- import_path: experiments.vericontest-qwen14b-experiment.tools.one_shot:VeriContestOneShot
+  model_name: vericontest
+datasets:
+- path: experiments/vericontest-qwen14b-experiment/tasks/vericontest
+  task_names:
+  - lc121--nl2code
+  - lc121--spec2code
+  - lc121--nl_spec2code
+  - lc217--nl2code
+  - lc217--spec2code
+  - lc217--nl_spec2code
+  - lc242--nl2code
+  - lc242--spec2code
+  - lc242--nl_spec2code

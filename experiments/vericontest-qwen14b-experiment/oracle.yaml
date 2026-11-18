@@ -1,0 +1,23 @@
+agent_setup_timeout_multiplier: 4.0
+agents:
+- name: oracle
+datasets:
+- path: experiments/vericontest-qwen14b-experiment/tasks/vericontest
+  task_names:
+  - lc121--nl2code
+  - lc121--spec2code
+  - lc121--nl_spec2code
+  - lc217--nl2code
+  - lc217--spec2code
+  - lc217--nl_spec2code
+  - lc242--nl2code
+  - lc242--spec2code
+  - lc242--nl_spec2code
+environment:
+  type: singularity
+environment_build_timeout_multiplier: 4.0
+job_name: qwen14b-vericontest-reference-control
+n_attempts: 1
+n_concurrent_trials: 1
+retry:
+  max_retries: 0

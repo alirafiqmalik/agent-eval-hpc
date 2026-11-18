@@ -1,0 +1,75 @@
+Bootstrap: docker
+From: python:3.12-bookworm
+
+%post
+    set -eu
+
+    # Unity builds in a root-mapped namespace that cannot switch to _apt.
+    echo 'APT::Sandbox::User "root";' > /etc/apt/apt.conf.d/99sandbox
+    apt-get update
+    apt-get install -y --no-install-recommends \
+        curl ca-certificates git build-essential
+    rm -rf /var/lib/apt/lists/*
+
+    export CARGO_HOME=/opt/cargo
+    export RUSTUP_HOME=/opt/rustup
+
+    curl --proto '=https' --tlsv1.2 -sSf \
+        https://sh.rustup.rs -o /tmp/rustup.sh
+
+    sh /tmp/rustup.sh -y --profile minimal \
+        --default-toolchain 1.94.0
+
+    export PATH=/opt/cargo/bin:$PATH
+
+    rustup component add --toolchain 1.94.0 rustc-dev llvm-tools
+
+    git init /tmp/vericontest-upstream
+    git -C /tmp/vericontest-upstream remote add origin \
+        https://github.com/HIPREL-Group/VeriContest.git
+
+    git -C /tmp/vericontest-upstream fetch --depth 1 origin \
+        2578227514cdd625b1d3f8086c82b9f075ed5432
+
+    git -C /tmp/vericontest-upstream checkout --detach FETCH_HEAD
+
+    cp -a /tmp/vericontest-upstream/verus /opt/verus
+    chmod +x /opt/verus/verus /opt/verus/rust_verify /opt/verus/z3
+
+    rustc --version
+    /opt/verus/verus --version
+
+    rm -rf /tmp/vericontest-upstream /tmp/rustup.sh
+
+    mkdir -p /app /tests /logs /staging
+    ln -sf /usr/local/bin/python3 /usr/bin/python3
+
+    mv /usr/bin/su /usr/bin/su.original
+    cat > /usr/bin/su <<'SH'
+#!/bin/sh
+if [ "$(id -u)" -eq 0 ] && [ "$1" = root ]; then
+    shift
+    if [ "$1" = -s ]; then
+        shell="$2"
+        shift 2
+    else
+        shell=/bin/sh
+    fi
+    if [ "$1" = -c ]; then
+        shift
+        exec "$shell" -c "$1"
+    fi
+fi
+exec /usr/bin/su.original "$@"
+SH
+    chmod 755 /usr/bin/su
+
+%environment
+    export CARGO_HOME=/opt/cargo
+    export RUSTUP_HOME=/opt/rustup
+    export RUSTUP_TOOLCHAIN=1.94.0
+    export PATH=/opt/cargo/bin:$PATH
+
+%labels
+    Name vericontest-experiment
+    BenchmarkRevision 2578227514cdd625b1d3f8086c82b9f075ed5432

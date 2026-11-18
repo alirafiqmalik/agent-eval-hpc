@@ -1,0 +1,16 @@
+agent_setup_timeout_multiplier: 4.0
+agents:
+- import_path: experiments.vericontest-qwen14b-experiment.tools.one_shot:VeriContestOneShot
+  model_name: vericontest
+datasets:
+- path: experiments/vericontest-qwen14b-experiment/tasks/vericontest
+  task_names:
+  - lc121--nl2code
+environment:
+  type: singularity
+environment_build_timeout_multiplier: 4.0
+job_name: qwen14b-vericontest-codegen-smoke
+n_attempts: 1
+n_concurrent_trials: 1
+retry:
+  max_retries: 0

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import yaml
@@ -13,9 +14,14 @@ HARDWARE_KEYS = ("id", "gpu_count", "allocated_cpus", "allocated_memory_mb")
 GPU_KEYS = ("gpu_name", "gpu_memory_mb")
 
 
-def load_runner_request(job_path: Path, runner_config: Path) -> tuple[dict, int, int]:
-    """Read this experiment's hardware from runner.yaml and retries from the connection."""
-    experiment = yaml.safe_load((job_path.parent / "runner.yaml").read_text())
+def load_runner_request(
+    job_path: Path, runner_config: Path, runner_file: Path | None = None
+) -> tuple[dict, int, int]:
+    """Read this experiment's hardware from runner.yaml and retries from the connection.
+
+    `runner_file` replaces runner.yaml, for example to run the same tasks on another GPU.
+    """
+    experiment = yaml.safe_load((runner_file or job_path.parent / "runner.yaml").read_text())
     if type(experiment) is not dict:
         raise ValueError("runner.yaml must be a mapping")
     hardware = experiment.get("hardware")
@@ -57,15 +63,20 @@ def request_for(
     run_id: str,
     runner_config: Path,
     walltime_seconds: int | None = None,
+    runner_file: Path | None = None,
 ) -> ExecutionRequest:
     """Package the repository and ask the cluster to run this job with Harbor."""
     root = root.resolve()
     if repository_root(job_path.resolve()) != root:
         raise ValueError("job file is outside the repository")
     validate_job(job_path)
-    hardware, walltime, attempts = load_runner_request(job_path, runner_config)
+    hardware, walltime, attempts = load_runner_request(job_path, runner_config, runner_file)
     if walltime_seconds is not None:
         walltime = walltime_seconds
+    environment = {}
+    if runner_file is not None:
+        # task.sh reads EVAL_RUNNER_CONFIG in place of the experiment's runner.yaml.
+        environment["EVAL_RUNNER_CONFIG"] = json.dumps(yaml.safe_load(runner_file.read_text()))
     relative = job_path.resolve().relative_to(root).as_posix()
     return ExecutionRequest(
         run_id,
@@ -75,4 +86,5 @@ def request_for(
         hardware,
         walltime,
         attempts,
+        environment,
     )

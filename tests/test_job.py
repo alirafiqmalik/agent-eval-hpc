@@ -1,4 +1,5 @@
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -7,7 +8,7 @@ import pytest
 import yaml
 from harbor.models.job.config import JobConfig
 
-from agentic_eval.launch import harbor_command, stage_job
+from agentic_eval.launch import harbor_command, harbor_environment, stage_job
 from agentic_eval.unity import request_for
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -47,6 +48,18 @@ def test_unity_request_uses_the_experiment_gpu():
     assert request.hardware["gpu_name"] == "NVIDIA A100-SXM4-80GB"
     assert request.hardware["gpu_memory_mb"] == 81920
     assert request.walltime_seconds == 14400
+
+
+def test_runner_file_replaces_the_experiment_runner(tmp_path):
+    runner = yaml.safe_load((EXPERIMENT / "runner.yaml").read_text())
+    runner["hardware"].update(id="other-gpu", gpu_name="Other GPU", gpu_memory_mb=1024)
+    path = tmp_path / "runner-other.yaml"
+    path.write_text(yaml.safe_dump(runner))
+    request = request_for(ROOT, JOB, "starter-001", RUNNER, None, path)
+    assert request.hardware["id"] == "other-gpu"
+    # task.sh reads this on the cluster, so the GPU and the model server agree.
+    assert json.loads(request.environment["EVAL_RUNNER_CONFIG"]) == runner
+    assert request_for(ROOT, JOB, "starter-001", RUNNER).environment == {}
 
 
 def test_smoke_run_can_request_a_shorter_walltime():
@@ -233,6 +246,15 @@ def test_summary_includes_trials_without_reward_files(tmp_path):
     assert summary["total"] == 1
     assert summary["errors"] == 1
     assert summary["problems"][0]["reward"] is None
+
+
+def test_harbor_can_import_experiment_local_agents(tmp_path, monkeypatch):
+    monkeypatch.setenv("PYTHONPATH", "/existing")
+    env = harbor_environment(ROOT)
+    assert env["PYTHONPATH"].split(os.pathsep) == [str(ROOT), "/existing"]
+    # -P matches a console script: the working directory is not on sys.path.
+    probe = [sys.executable, "-P", "-c", "import experiments"]
+    assert subprocess.run(probe, cwd=tmp_path, env=env).returncode == 0
 
 
 def test_cluster_entrypoint_serves_the_model_then_runs_harbor():

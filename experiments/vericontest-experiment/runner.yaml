@@ -1,0 +1,31 @@
+# One NVIDIA A100-SXM4-80GB. The Unity controller measured 81920 MiB on this
+# GPU under the constraint a100-80g&sapphirerapids.
+# Connection: src/runners/unityhpc/connections/vericontest-a100.yaml.
+# runner-l40s.yaml is the L40S version. Use ./run.sh to select a GPU.
+# Qwen2.5-Coder-7B in fp16 needs about 15.2 GB for weights and 0.9 GB of KV
+# cache for one 16384-token sequence; trials run one at a time. 8 CPUs and
+# 64 GiB serve vLLM, Harbor, one 2-CPU sandbox, and the Verus compiles.
+hardware:
+  id: unity-a100-80g-vericontest-v1
+  gpu_count: 1
+  gpu_name: NVIDIA A100-SXM4-80GB
+  gpu_memory_mb: 81920
+  allocated_cpus: 8
+  allocated_memory_mb: 65536
+
+# The 9-task L40S run took 14 minutes with a cached image and model.
+walltime_seconds: 5400
+
+model_server:
+  port: 8000
+  context_length: 16384
+  # The runtime cannot JIT-compile the FlashInfer sampler (CUDA header mismatch).
+  command: >-
+    env VLLM_USE_FLASHINFER_SAMPLER=0
+    vllm serve {model}
+    --revision c03e6d358207e414f1eca0bb1891e29f1db0e242
+    --served-model-name vericontest
+    --port {port}
+    --tensor-parallel-size 1
+    --max-model-len {context_length}
+    --dtype half

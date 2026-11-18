@@ -41,6 +41,9 @@ def parser() -> argparse.ArgumentParser:
         command = actions.add_parser(name)
         _add_runner_args(command, job=True)
         command.add_argument("--walltime-seconds", type=int)
+        command.add_argument(
+            "--runner-file", type=Path, help="use this file in place of the job's runner.yaml"
+        )
     for name in ("status", "cancel", "fetch"):
         command = actions.add_parser(name)
         _add_runner_args(command, job=False)
@@ -72,7 +75,7 @@ def main(argv: list[str] | None = None) -> int:
             unpack_run(args.output)
             return 0
         request = request_for(
-            root, args.job, args.run_id, args.runner_config, args.walltime_seconds
+            root, args.job, args.run_id, args.runner_config, args.walltime_seconds, args.runner_file
         )
         if args.command == "plan":
             print(runner.plan(request))

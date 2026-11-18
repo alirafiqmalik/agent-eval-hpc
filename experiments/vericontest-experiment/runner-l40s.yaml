@@ -1,0 +1,27 @@
+# One NVIDIA L40S. The Unity controller measured 46068 MiB on this GPU.
+# Connection: src/runners/unityhpc/connections/vericontest-l40s.yaml.
+# Used for vericontest-pilot-001. Keep the other values the same as runner.yaml.
+hardware:
+  id: unity-l40s-vericontest-v1
+  gpu_count: 1
+  gpu_name: NVIDIA L40S
+  gpu_memory_mb: 46068
+  allocated_cpus: 8
+  allocated_memory_mb: 65536
+
+# The 9-task L40S run took 14 minutes with a cached image and model.
+walltime_seconds: 5400
+
+model_server:
+  port: 8000
+  context_length: 16384
+  # The runtime cannot JIT-compile the FlashInfer sampler (CUDA header mismatch).
+  command: >-
+    env VLLM_USE_FLASHINFER_SAMPLER=0
+    vllm serve {model}
+    --revision c03e6d358207e414f1eca0bb1891e29f1db0e242
+    --served-model-name vericontest
+    --port {port}
+    --tensor-parallel-size 1
+    --max-model-len {context_length}
+    --dtype half

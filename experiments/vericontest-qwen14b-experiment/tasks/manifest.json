@@ -1,0 +1,102 @@
+{
+  "dataset": "Gax-c/VeriContest",
+  "dataset_revision": "3219d5f3739a79bd5bf02fc99ff3fa5095015a1b",
+  "benchmark_revision": "2578227514cdd625b1d3f8086c82b9f075ed5432",
+  "scope": "Three problems x three CodeGen settings",
+  "prompt_source": "Reconstructed Colab pilot prompts",
+  "formal_proof_checking": false,
+  "task_names": [
+    "lc121--nl2code",
+    "lc121--spec2code",
+    "lc121--nl_spec2code",
+    "lc217--nl2code",
+    "lc217--spec2code",
+    "lc217--nl_spec2code",
+    "lc242--nl2code",
+    "lc242--spec2code",
+    "lc242--nl_spec2code"
+  ],
+  "tasks": [
+    {
+      "name": "lc121--nl2code",
+      "problem": "lc121",
+      "setting": "nl2code",
+      "test_count": 279,
+      "prompt_sha256": "274025e5873ada0a6f770ac3a003a2c4e88f45707fa33471b51c025c3d3ca8e4",
+      "suite_sha256": "9fc5165f73ca272bd7696476b97900abcf7862f046f22726ebbbfa0234838a59",
+      "oracle_sha256": "ba3e1d979424270e1a43af1a69dcdf5b75b617e02034f853ff46c7c13920875d"
+    },
+    {
+      "name": "lc121--spec2code",
+      "problem": "lc121",
+      "setting": "spec2code",
+      "test_count": 279,
+      "prompt_sha256": "5b5b967b9fefb7d33d1d906d17f9cc573fd9d8a4e6f4c4be61a86581df27c9ee",
+      "suite_sha256": "9fc5165f73ca272bd7696476b97900abcf7862f046f22726ebbbfa0234838a59",
+      "oracle_sha256": "ba3e1d979424270e1a43af1a69dcdf5b75b617e02034f853ff46c7c13920875d"
+    },
+    {
+      "name": "lc121--nl_spec2code",
+      "problem": "lc121",
+      "setting": "nl_spec2code",
+      "test_count": 279,
+      "prompt_sha256": "e7ddb047900dcf46b8ec9b21d175f536932d57c6edb03414e326511ba8717d57",
+      "suite_sha256": "9fc5165f73ca272bd7696476b97900abcf7862f046f22726ebbbfa0234838a59",
+      "oracle_sha256": "ba3e1d979424270e1a43af1a69dcdf5b75b617e02034f853ff46c7c13920875d"
+    },
+    {
+      "name": "lc217--nl2code",
+      "problem": "lc217",
+      "setting": "nl2code",
+      "test_count": 267,
+      "prompt_sha256": "452ad7d2d3b583edeb2206f4f9048b93623098fe8989fa0e6e9f8cdac76c6037",
+      "suite_sha256": "64b2e617c4cb86cf0bde0c1344e49900c88e8263162e1dbf452bfb4080555d6e",
+      "oracle_sha256": "372cdcf12d7d76c9519a7c1304c95b39b5eb7fa778731be2cf2118313dcd8053"
+    },
+    {
+      "name": "lc217--spec2code",
+      "problem": "lc217",
+      "setting": "spec2code",
+      "test_count": 267,
+      "prompt_sha256": "967fcfd53492fd7d93043557c845c307cedbfb5d54230c18a9e5cb90a06d737d",
+      "suite_sha256": "64b2e617c4cb86cf0bde0c1344e49900c88e8263162e1dbf452bfb4080555d6e",
+      "oracle_sha256": "372cdcf12d7d76c9519a7c1304c95b39b5eb7fa778731be2cf2118313dcd8053"
+    },
+    {
+      "name": "lc217--nl_spec2code",
+      "problem": "lc217",
+      "setting": "nl_spec2code",
+      "test_count": 267,
+      "prompt_sha256": "fb3f9421a2e1197198696f01b08a2f5236fcb8d332c7f51e9f95e9096d98067b",
+      "suite_sha256": "64b2e617c4cb86cf0bde0c1344e49900c88e8263162e1dbf452bfb4080555d6e",
+      "oracle_sha256": "372cdcf12d7d76c9519a7c1304c95b39b5eb7fa778731be2cf2118313dcd8053"
+    },
+    {
+      "name": "lc242--nl2code",
+      "problem": "lc242",
+      "setting": "nl2code",
+      "test_count": 293,
+      "prompt_sha256": "7849845b80440831283b38a1e7dfcdf0b317b59634b2dbaac3347fc88e3ac514",
+      "suite_sha256": "9ab8843bb38fd4193d2d930abb376697270424ace7efc0f774bf7cddaa55bd3d",
+      "oracle_sha256": "ff4de7ee7cee274747c325f0b814d848ccb18e688947e96bdaebcb3a735f0e55"
+    },
+    {
+      "name": "lc242--spec2code",
+      "problem": "lc242",
+      "setting": "spec2code",
+      "test_count": 293,
+      "prompt_sha256": "9a9b8c037b6798a4ee520b99afd90747da0d46dd17c7b55a6fc73fc32d57991b",
+      "suite_sha256": "9ab8843bb38fd4193d2d930abb376697270424ace7efc0f774bf7cddaa55bd3d",
+      "oracle_sha256": "ff4de7ee7cee274747c325f0b814d848ccb18e688947e96bdaebcb3a735f0e55"
+    },
+    {
+      "name": "lc242--nl_spec2code",
+      "problem": "lc242",
+      "setting": "nl_spec2code",
+      "test_count": 293,
+      "prompt_sha256": "eca6b99dfd8011ac7e240521902981419025a92e42f794d0a1e96633523e5dbb",
+      "suite_sha256": "9ab8843bb38fd4193d2d930abb376697270424ace7efc0f774bf7cddaa55bd3d",
+      "oracle_sha256": "ff4de7ee7cee274747c325f0b814d848ccb18e688947e96bdaebcb3a735f0e55"
+    }
+  ]
+}

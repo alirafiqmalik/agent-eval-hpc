@@ -79,6 +79,16 @@ def harbor_command(
     return command
 
 
+def harbor_environment(root: Path) -> dict[str, str]:
+    """Let Harbor import experiment-local agents such as `experiments.<name>.tools.<module>`.
+
+    The `harbor` console script does not put its working directory on sys.path.
+    """
+    env = dict(os.environ)
+    env["PYTHONPATH"] = os.pathsep.join(filter(None, (str(root), env.get("PYTHONPATH"))))
+    return env
+
+
 def post_run(experiment: Path, run_dir: Path) -> None:
     """Write the combined trajectory and the score summary for one run."""
     logs = run_dir / "logs"
@@ -162,7 +172,9 @@ def run_job(
     if image is not None:
         job = stage_job(job, jobs_dir.parent / "staged", image)
     status = subprocess.call(
-        harbor_command(job, jobs_dir, base_url, experiment=source_job.resolve().parent), cwd=root
+        harbor_command(job, jobs_dir, base_url, experiment=source_job.resolve().parent),
+        cwd=root,
+        env=harbor_environment(root),
     )
     post_run(source_job.resolve().parent, jobs_dir.parent)
     return status

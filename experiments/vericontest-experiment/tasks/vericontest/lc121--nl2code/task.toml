@@ -1,0 +1,17 @@
+version = "1.0"
+
+[metadata]
+problem = "lc121"
+setting = "nl2code"
+
+[verifier]
+timeout_sec = 2400.0
+
+[agent]
+timeout_sec = 720.0
+
+[environment]
+docker_image = "experiments/vericontest-experiment/sandbox/sandbox.sif"
+cpus = 2
+memory_mb = 4096
+build_timeout_sec = 3600.0
