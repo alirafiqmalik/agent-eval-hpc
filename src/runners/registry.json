@@ -1,3 +1,4 @@
 {
-  "unityhpc": "runners.unityhpc.adapter:UnityRunner"
+  "unityhpc": "runners.unityhpc.adapter:UnityRunner",
+  "modal": "runners.modalcloud.adapter:ModalRunner"
 }

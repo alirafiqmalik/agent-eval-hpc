@@ -1,0 +1,13 @@
+# Shared Modal settings. Modal provisions hardware on demand, so GPU types and
+# sizes stay in each experiment's runner.yaml. The workspace and token come from
+# ~/.modal.toml (`modal token new`) or MODAL_TOKEN_ID and MODAL_TOKEN_SECRET.
+app_name: agentic-eval
+runs_volume: agentic-eval-runs
+model_cache_volume: agentic-eval-model-cache
+registry: agentic-eval-runs
+max_attempts: 1
+# Modal stops a Function call after 24 hours. Keep the grace period below that.
+max_walltime_seconds: 84600
+allocation_limits:
+  gpu_hours: null
+  cpu_hours: null
