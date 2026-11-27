@@ -42,25 +42,19 @@ def harbor_command(
     if not prompt.is_file():
         raise ValueError(f"missing system prompt: {prompt}")
     job_config = yaml.safe_load(job.read_text())
-    environment = job_config.get("environment", {}).get("import_path") or "singularity"
-    command = [
-        harbor,
-        "run",
-        "--config",
-        str(job),
-        "--env",
-        environment,
-        "--mounts",
-        json.dumps(
-            [
-                {
-                    "type": "bind",
-                    "source": "/etc/resolv.conf",
-                    "target": "/etc/resolv.conf",
-                    "read_only": True,
-                }
-            ]
-        ),
+    environment_config = job_config.get("environment", {})
+    environment = environment_config.get("import_path") or "singularity"
+    command = [harbor, "run", "--config", str(job), "--env", environment]
+    if environment_config.get("type", "singularity") == "singularity":
+        # Singularity shares the host network; give it the host's resolver.
+        resolver = {
+            "type": "bind",
+            "source": "/etc/resolv.conf",
+            "target": "/etc/resolv.conf",
+            "read_only": True,
+        }
+        command.extend(["--mounts", json.dumps([resolver])])
+    command += [
         "--jobs-dir",
         str(jobs_dir),
         "--extra-instruction-path",

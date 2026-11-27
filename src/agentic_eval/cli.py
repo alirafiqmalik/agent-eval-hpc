@@ -13,23 +13,33 @@ from runners.discovery import load_runner
 
 
 def _runner(root: Path, args):
-    return load_runner(root, args.runner, args.runner_config)
+    config = args.runner_config or Path(
+        f"src/runners/{RUNNER_DIRS[args.runner]}/connections/config.yaml"
+    )
+    args.runner_config = config
+    return load_runner(root, args.runner, config)
+
+
+# Registry name to adapter folder, for each runner's default connection profile.
+RUNNER_DIRS = {"unityhpc": "unityhpc", "modal": "modalcloud"}
 
 
 def _add_runner_args(command: argparse.ArgumentParser, *, job: bool) -> None:
     if job:
         command.add_argument("job", type=Path)
     command.add_argument("--run-id", required=True)
-    command.add_argument("--runner", default="unityhpc")
+    command.add_argument("--runner", default="unityhpc", choices=sorted(RUNNER_DIRS))
     command.add_argument(
         "--runner-config",
         type=Path,
-        default=Path("src/runners/unityhpc/connections/config.yaml"),
+        help="connection profile (default: the runner's connections/config.yaml)",
     )
 
 
 def parser() -> argparse.ArgumentParser:
-    commands = argparse.ArgumentParser(description="Run Harbor jobs locally or on Unity HPC")
+    commands = argparse.ArgumentParser(
+        description="Run Harbor jobs locally, on Unity HPC, or Modal"
+    )
     actions = commands.add_subparsers(dest="command", required=True)
     validate = actions.add_parser("validate", help="check a Harbor job file and its tasks")
     validate.add_argument("job", type=Path)
@@ -71,8 +81,8 @@ def main(argv: list[str] | None = None) -> int:
             print(runner.fetch(args.run_id, args.output))
             unpack_run(args.output)
             return 0
-        request = request_for(
-            root, args.job, args.run_id, args.runner_config, args.walltime_seconds
+        request = build_request(
+            runner, root, args.job, args.run_id, args.runner_config, args.walltime_seconds
         )
         if args.command == "plan":
             print(runner.plan(request))
@@ -82,6 +92,13 @@ def main(argv: list[str] | None = None) -> int:
     except (ValueError, FileNotFoundError) as exc:
         print(exc, file=sys.stderr)
         return 2
+
+
+def build_request(runner, root: Path, job: Path, run_id: str, config: Path, walltime: int | None):
+    """Use the runner's own request builder when it has one; Unity's otherwise."""
+    if hasattr(runner, "request_for"):
+        return runner.request_for(root, job, run_id, walltime)
+    return request_for(root, job, run_id, config, walltime)
 
 
 if __name__ == "__main__":

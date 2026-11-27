@@ -5,7 +5,7 @@ description = "Configurable agent evaluation on Unity HPC, built on Harbor"
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
 dependencies = [
-    "harbor==0.24.0",
+    "harbor[modal]==0.24.0",
     "packaging>=24,<27",
     "pydantic>=2.11,<3",
     "PyYAML>=6.0.2,<7",

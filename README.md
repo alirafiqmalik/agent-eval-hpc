@@ -8,7 +8,7 @@
 
 A modular evaluation framework built on **Harbor**, with **Apptainer sandboxes**, **local model serving**, and a **Unity HPC runner**. Experiment folders bring together datasets, agent settings, prompts, resource requests, and scoring tools. Harbor supplies the job and task formats; this repository connects them to cluster execution and inspectable results.
 
-[Quick start](#quick-start) · [Architecture](#architecture) · [Experiments](#experiments) · [Run on Unity](#run-on-unity) · [Results](#results-and-traceability) · [Extend](#add-an-experiment)
+[Quick start](#quick-start) · [Architecture](#architecture) · [Experiments](#experiments) · [Run on Unity](#run-on-unity) · [Run on Modal](#run-on-modal) · [Results](#results-and-traceability) · [Extend](#add-an-experiment)
 
 ## What is implemented
 
@@ -87,6 +87,7 @@ agentic-eval --help
 | Experiment | Included tasks | Agent and evaluation |
 | --- | ---: | --- |
 | [HumanEval starter](experiments/unityhpc-starter-experiment) | **164** Python tasks | Qwen Coder with Qwen3.5-9B; hidden-test grading, a two-task smoke job, and per-trial trajectories. |
+| [Modal starter](experiments/modal-starter-experiment) | **4** tasks | Oracle and Qwen Coder with Qwen3-0.6B; a CPU probe, a GPU kernel probe, and two HumanEval tasks check the full Modal path with few model tokens. |
 | [Verus SpecGym](experiments/verus_specgym_reproduce) | **581** specification tasks | SWE-agent with local inference; syntax checks, precondition/postcondition soundness and completeness, verifier controls, and campaign analysis. |
 
 Task counts come from the committed [HumanEval task folders](experiments/unityhpc-starter-experiment/tasks/humaneval) and [Verus manifest](experiments/verus_specgym_reproduce/tasks/manifest.json). Verus model suites, upstream revisions, execution limits, and reproduction deviations are recorded in [`reproduction.yaml`](experiments/verus_specgym_reproduce/reproduction.yaml).
@@ -179,6 +180,20 @@ make evaluate \
 | Cancel a run | `agentic-eval cancel --run-id <id> --runner-config <connection.yaml>` |
 
 Pass the same `RUNNER_CONFIG=<connection.yaml>` to each Make command when using a custom connection. For local execution, `make run RUN_ID=<id> EXPERIMENT=<job.yaml>` uses Harbor on the current machine and requires a usable sandbox image and model endpoint. The CLI also accepts `run --base-url`.
+
+## Run on Modal
+
+The [Modal runner](src/runners/modalcloud/adapter.py) needs only a Modal account: run `modal token new` once (the token goes to `~/.modal.toml`). `make setup` installs the Modal client with Harbor.
+
+`submit` uploads a byte-stable bundle (the project files and the experiment folder) to a Modal Volume, records the request in a Modal Dict, deploys the [orchestrator app](src/runners/modalcloud/app.py), and spawns one Function call. The call runs [`task.py`](src/runners/modalcloud/jobs/task.py): it starts vLLM in a GPU sandbox with an HTTPS tunnel and a per-run API key, checks the GPU with `nvidia-smi`, and runs Harbor. Each trial runs in its own Modal sandbox. The experiment's `runner.yaml` sets the model server GPU and image; each `task.toml` sets the trial sandbox resources.
+
+```bash
+make evaluate RUNNER=modal \
+  EXPERIMENT=experiments/modal-starter-experiment/job.yaml \
+  RUN_ID=modal-starter-003
+```
+
+`status`, `fetch`, `collect`, and `agentic-eval cancel --runner modal` take the same `RUNNER=modal`. Cancel also stops every sandbox tagged with the run ID.
 
 ## Results and traceability
 

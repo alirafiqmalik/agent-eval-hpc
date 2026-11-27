@@ -38,7 +38,6 @@ EXPERIMENT_FILES = (
     "runner.yaml",
     "agent/agent-config.yaml",
     "agent/prompts/system.md",
-    "sandbox/sandbox.def",
     "tools/verifier/test.sh",
     "tools/verifier/grade.py",
     "tools/trajectory/export.py",
@@ -46,11 +45,17 @@ EXPERIMENT_FILES = (
 )
 
 
+SANDBOX_RECIPES = ("sandbox.def", "Dockerfile")
+
+
 def validate_experiment(path: Path) -> JobConfig:
     """Load the Harbor job and require the experiment files around it."""
     job = validate_job(path)
     experiment = path.resolve().parent
     missing = [name for name in EXPERIMENT_FILES if not (experiment / name).is_file()]
+    # Apptainer backends build sandbox.def; Docker-image backends such as Modal build a Dockerfile.
+    if not any((experiment / "sandbox" / name).is_file() for name in SANDBOX_RECIPES):
+        missing.append(" or ".join(f"sandbox/{name}" for name in SANDBOX_RECIPES))
     if missing:
         raise ValueError(f"{experiment} is missing {', '.join(missing)}")
     return job
