@@ -13,7 +13,8 @@ One experiment is one folder, `experiments/<name>/`.
 experiments/<name>/
   job.yaml                  Harbor job. Holds n_attempts and the dataset path.
   runner.yaml               Unity GPU request, wall time, and the model server.
-  sandbox/sandbox.def       Apptainer recipe committed in git.
+  sandbox/sandbox.def       Apptainer recipe committed in git (Unity).
+  sandbox/Dockerfile        Docker recipe committed in git (Modal), copied into each task.
   sandbox/sandbox.sif       Built on Unity. Not committed.
   agent/agent-config.yaml   Model id, turn limit, and sampling.
   agent/prompts/system.md
@@ -33,10 +34,12 @@ experiments/<name>/
 src/agentic_eval/           Commands, job checks, and the Harbor launch.
 src/runners/                Shared runner library.
 src/runners/unityhpc/       Unity client, task.sh, and the cluster connection.
+src/runners/modalcloud/     Modal app, adapter, sandbox environment, and task.py.
 ```
 
 Shared Unity profiles (partitions, GPU type, retries) stay in `src/runners/unityhpc/connections/<profile>.yaml`.
 Per-user settings (controller URL, runtime and model paths, SSH lease) go in the gitignored `connections/local.yaml`, copied from `local.example.yaml`. Never add them to a tracked profile.
+Modal uses `src/runners/modalcloud/connections/config.yaml` for app, volume, and limit names. The Modal token stays in `~/.modal.toml`. Modal hardware (GPU type, CPUs, memory) goes in the experiment's `runner.yaml` and `task.toml`.
 `output/` is gitignored. Local tool caches live in `.cache/`, which is also gitignored.
 `AGENT.md` is this guide. `AGENTS.md` and `CLAUDE.md` are symlinks to it.
 
