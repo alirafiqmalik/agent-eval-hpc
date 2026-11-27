@@ -1,0 +1,22 @@
+# Two agents run every task: oracle proves the sandboxes and verifiers without
+# model tokens, and qwen-coder proves the served model through the agent.
+job_name: modal-starter-experiment
+n_attempts: 1
+n_concurrent_trials: 4
+retry:
+  max_retries: 1
+  include_exceptions: [AgentSetupTimeoutError, EnvironmentStartTimeoutError]
+environment:
+  type: modal
+  import_path: runners.modalcloud.environment:ModalRunEnvironment
+  kwargs:
+    # Hard stop for a trial sandbox if its orchestrator stops early.
+    sandbox_timeout_secs: 3600
+agents:
+  - name: oracle
+  - name: qwen-coder
+    model_name: Qwen/Qwen3-0.6B
+    kwargs:
+      version: 0.25.1
+datasets:
+  - path: experiments/modal-starter-experiment/tasks/starter

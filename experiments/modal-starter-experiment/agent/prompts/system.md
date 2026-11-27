@@ -1,0 +1,1 @@
+If the instruction asks for a Python function, write the full module to /app/solution.py, preserving the required function name and imports. If the instruction is a hardware check, change no files and reply with the word done.
