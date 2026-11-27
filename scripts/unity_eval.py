@@ -1,4 +1,4 @@
-"""Submit or resume a Unity campaign, then collect and verify its evaluation."""
+"""Submit or resume a Unity or Modal run, then collect and verify its evaluation."""
 
 from __future__ import annotations
 
@@ -160,6 +160,7 @@ def parser() -> argparse.ArgumentParser:
         )
         action.add_argument("job", type=Path)
         action.add_argument("--run-id", required=True)
+        action.add_argument("--runner", default="unityhpc", choices=("unityhpc", "modal"))
         action.add_argument("--runner-config", type=Path, required=True)
         action.add_argument("--output", type=Path)
         action.add_argument("--poll-seconds", type=int, default=30)
@@ -175,10 +176,13 @@ def main(argv: list[str] | None = None) -> int:
     root = Path(__file__).resolve().parents[1]
     job = args.job.resolve()
     output = args.output or job.parent / "output" / args.run_id
-    runner = load_runner(root, "unityhpc", args.runner_config)
+    runner = load_runner(root, args.runner, args.runner_config)
     if args.action == "run":
         validate_experiment(job)
-        request = request_for(root, job, args.run_id, args.runner_config, args.walltime_seconds)
+        if hasattr(runner, "request_for"):
+            request = runner.request_for(root, job, args.run_id, args.walltime_seconds)
+        else:
+            request = request_for(root, job, args.run_id, args.runner_config, args.walltime_seconds)
         submit_with_retries(runner, request)
         print(f"submitted {args.run_id}", flush=True)
     campaign = wait_for_terminal(runner, args.run_id, args.poll_seconds)
